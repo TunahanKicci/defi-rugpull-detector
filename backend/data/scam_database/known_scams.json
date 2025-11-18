@@ -1,0 +1,8 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2025-01-01",
+  "scams": [
+    "0x0000000000000000000000000000000000000000"
+  ],
+  "description": "Known scam contract addresses. Add verified scam addresses here."
+}
