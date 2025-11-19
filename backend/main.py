@@ -22,7 +22,7 @@ logger = setup_logger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan events"""
-    logger.info("🚀 Starting RugPull Detector API...")
+    logger.info("Starting RugPull Detector API...")
     logger.info(f"Environment: {settings.APP_ENV}")
     logger.info(f"Debug Mode: {settings.DEBUG}")
     
@@ -32,7 +32,7 @@ async def lifespan(app: FastAPI):
     yield
     
     # Shutdown logic
-    logger.info("🛑 Shutting down RugPull Detector API...")
+    logger.info("Shutting down RugPull Detector API...")
 
 
 # Create FastAPI application
@@ -63,7 +63,7 @@ app.include_router(history.router, prefix="/api", tags=["History"])
 async def root():
     """Root endpoint"""
     return {
-        "message": "🛡️ DeFi Rug Pull Detector API",
+        "message": "DeFi Rug Pull Detector API",
         "version": "1.0.0",
         "docs": "/docs",
         "status": "operational"

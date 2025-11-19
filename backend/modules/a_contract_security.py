@@ -34,11 +34,26 @@ async def analyze(address: str, blockchain) -> Dict[str, Any]:
         # Get bytecode
         bytecode = await blockchain.get_bytecode(address)
         
-        if not bytecode or bytecode == "0x":
+        if not bytecode or bytecode == "0x" or bytecode == "":
+            # Try to get contract info to verify it exists
+            try:
+                contract_info = await blockchain.get_contract_info(address)
+                if contract_info.get("is_contract"):
+                    # Contract exists but bytecode retrieval failed
+                    logger.warning(f"Contract exists but bytecode unavailable for {address}")
+                    return {
+                        "risk_score": 30,
+                        "warnings": ["⚠️ Bytecode unavailable (possible RPC limit or large contract)"],
+                        "data": {"bytecode_length": 0, "is_contract": True},
+                        "features": {"has_bytecode": 0.5}
+                    }
+            except:
+                pass
+            
             return {
                 "risk_score": 100,
-                "warnings": ["Contract bytecode not found - possible EOA or fake contract"],
-                "data": {"bytecode_length": 0},
+                "warnings": ["🚨 Contract bytecode not found - possible EOA or fake contract"],
+                "data": {"bytecode_length": 0, "is_contract": False},
                 "features": {"has_bytecode": 0}
             }
         

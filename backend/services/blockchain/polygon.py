@@ -37,13 +37,19 @@ class PolygonChain(BaseChain):
             "name": None,
             "symbol": None,
             "decimals": None,
-            "total_supply": None
+            "total_supply": None,
+            "is_contract": False
         }
         
         try:
             checksum_address = self.w3.to_checksum_address(address)
             
-            if not self.is_contract(address):
+            # Check if it's a contract
+            code = self.w3.eth.get_code(checksum_address)
+            is_contract = code and len(code) > 2
+            info["is_contract"] = is_contract
+            
+            if not is_contract:
                 logger.warning(f"{address} is not a contract")
                 return info
             

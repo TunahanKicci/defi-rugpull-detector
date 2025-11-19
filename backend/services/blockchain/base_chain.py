@@ -42,10 +42,17 @@ class BaseChain(ABC):
         try:
             checksum_address = self.w3.to_checksum_address(address)
             bytecode = self.w3.eth.get_code(checksum_address)
-            return bytecode.hex()
+            
+            # Log for debugging
+            if bytecode and len(bytecode) > 2:
+                logger.info(f"Retrieved bytecode for {address}: {len(bytecode)} bytes")
+            else:
+                logger.warning(f"No bytecode found for {address}")
+            
+            return bytecode.hex() if bytecode else "0x"
         except Exception as e:
             logger.error(f"Failed to get bytecode for {address}: {str(e)}")
-            return ""
+            return "0x"
     
     async def get_balance(self, address: str) -> float:
         """
