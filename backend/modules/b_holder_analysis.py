@@ -4,16 +4,16 @@ Analyzes token distribution using 'Active Wallet Sampling' via Etherscan & RPC.
 Replaces mock data with real on-chain balance checks.
 """
 import logging
-import os
 import requests
 from typing import Dict, Any, List
 from web3 import Web3
+from config.settings import settings
 
 logger = logging.getLogger(__name__)
 
-# Etherscan API Ayarları (Env'den okumaya çalışır, yoksa demo key kullanır)
-ETHERSCAN_API_KEY = os.getenv("ETHERSCAN_API_KEY", "YourApiKeyToken") 
-ETHERSCAN_URL = "https://api.etherscan.io/api"
+# Etherscan API Ayarları
+ETHERSCAN_API_KEY = settings.ETHERSCAN_API_KEY
+ETHERSCAN_URL = "https://api.etherscan.io/v2/api"
 
 def calculate_gini(balances: List[float]) -> float:
     """
@@ -106,7 +106,7 @@ async def analyze(address: str, blockchain) -> Dict[str, Any]:
         # Burn adresi (0xdead...) genelde holder sayılmaz, filtreleyebiliriz ama 
         # supply hesaplamasında önemli olabilir. Şimdilik dahil ediyoruz.
         
-        for addr in list(active_addresses)[:50]: # RPC'yi yormamak için max 50 adres
+        for addr in list(active_addresses)[:10]: # RPC'yi yormamak için max 10 adres (hızlı test)
             try:
                 bal_raw = contract.functions.balanceOf(addr).call()
                 bal = bal_raw / (10 ** decimals)

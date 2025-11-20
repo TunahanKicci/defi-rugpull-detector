@@ -60,7 +60,7 @@ class Settings(BaseSettings):
     LOG_FILE: str = "logs/app.log"
     
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file="../.env",  # .env is in project root, not backend/
         env_file_encoding="utf-8",
         case_sensitive=True,
         extra="ignore"
