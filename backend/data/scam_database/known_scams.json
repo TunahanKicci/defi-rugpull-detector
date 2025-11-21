@@ -1,8 +1,17 @@
 {
   "version": "1.0.0",
-  "last_updated": "2025-01-01",
+  "last_updated": "2025-11-21",
   "scams": [
-    "0x0000000000000000000000000000000000000000"
+    "0x0000000000000000000000000000000000000000",
+    "0x1234567890123456789012345678901234567890"
   ],
-  "description": "Known scam contract addresses. Add verified scam addresses here."
+  "bytecode_patterns": [
+    {
+      "address": "0xTestScamForSimilarity00000000000000000000",
+      "description": "Test scam pattern with common ERC20 functions",
+      "bytecode": "0x606060405260043610610196576000357c0100000000000000000000000000000000000000000000000000000000",
+      "function_selectors": ["a9059cbb", "23b872dd", "095ea7b3", "70a08231", "18160ddd"]
+    }
+  ],
+  "description": "Known scam contract addresses and bytecode patterns. This database is used for pattern matching and similarity detection."
 }
