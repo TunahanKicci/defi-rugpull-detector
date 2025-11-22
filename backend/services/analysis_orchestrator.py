@@ -64,7 +64,7 @@ class AnalysisOrchestrator:
         
         Args:
             address: Token contract address
-            force_refresh: Force refresh cached data
+            force_refresh: Force refresh cached data (ignored - cache disabled)
             
         Returns:
             Complete analysis result
@@ -72,13 +72,7 @@ class AnalysisOrchestrator:
         start_time = time.time()
         logger.info(f"Starting analysis for {address} on {self.chain_name}")
         
-        # Check cache first
-        if not force_refresh:
-            cached_result = await self.cache.get_analysis(address, self.chain_name)
-            if cached_result:
-                logger.info(f"Returning cached result for {address}")
-                cached_result["cached"] = True
-                return cached_result
+        # Cache disabled - always run fresh analysis
         
         try:
             # Step 1: Get basic contract info
@@ -106,8 +100,7 @@ class AnalysisOrchestrator:
             result["analysis_duration_ms"] = round(duration_ms, 2)
             result["cached"] = False
             
-            # Cache result
-            await self.cache.set_analysis(address, self.chain_name, result)
+            # Cache disabled - no caching
             
             logger.info(f"Analysis completed for {address} in {duration_ms:.2f}ms - Risk: {result['risk_score']}")
             
@@ -115,6 +108,7 @@ class AnalysisOrchestrator:
             
         except Exception as e:
             logger.error(f"Analysis failed for {address}: {str(e)}", exc_info=True)
+            # Don't cache failures
             raise
     
     async def quick_check(self, address: str) -> Dict[str, Any]:
