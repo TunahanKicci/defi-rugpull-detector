@@ -187,12 +187,26 @@ class AnalysisOrchestrator:
             try:
                 logger.debug(f"Running module: {module_name}")
                 result = await module.analyze(address, self.blockchain)
+                
+                # CRITICAL LOGIC: A module = 0 risk is SUSPICIOUS for unknown tokens
+                # Legitimate tokens ALWAYS have risk factors (ownership, functions, etc.)
+                # 0 risk = bytecode unavailable/obfuscated = SCAM INDICATOR
+                if module_name == "contract_security" and result.get("risk_score", 0) == 0:
+                    warnings = result.get("warnings", [])
+                    if not warnings or len(warnings) == 0:
+                        logger.warning(f"⚠️ A module: 0 risk with no warnings = SUSPICIOUS bytecode")
+                        result["risk_score"] = 50
+                        result["warnings"] = [
+                            "🚨 CRITICAL: Contract bytecode unavailable or obfuscated",
+                            "⚠️ Cannot verify contract safety - HIGH RISK"
+                        ]
+                
                 results[module_name] = result
             except Exception as e:
                 logger.error(f"Module {module_name} failed: {str(e)}")
                 results[module_name] = {
                     "error": str(e),
-                    "risk_score": 50,  # Default medium risk on error
+                    "risk_score": 50,
                     "warnings": [f"Module failed: {str(e)}"]
                 }
         

@@ -43,14 +43,13 @@ TAX_FUNCTION_SELECTORS = {
 }
 
 
-def try_call_function(contract, function_names: list, timeout: int = 2) -> Optional[int]:
+def try_call_function(contract, function_names: list) -> Optional[int]:
     """
-    Try to call multiple function name variations with timeout
+    Try to call multiple function name variations
     
     Args:
         contract: Web3 contract instance
         function_names: List of function names to try
-        timeout: Timeout in seconds per call
         
     Returns:
         Function result or None
@@ -58,7 +57,7 @@ def try_call_function(contract, function_names: list, timeout: int = 2) -> Optio
     for func_name in function_names:
         try:
             if hasattr(contract.functions, func_name):
-                result = getattr(contract.functions, func_name)().call(timeout=timeout)
+                result = getattr(contract.functions, func_name)().call()
                 logger.debug(f"✓ {func_name}() returned: {result}")
                 return result
         except Exception as e:
@@ -162,18 +161,19 @@ async def analyze(address: str, blockchain) -> Dict[str, Any]:
         decimals = None
         
         try:
-            total_supply = contract.functions.totalSupply().call(timeout=2)
+            total_supply = contract.functions.totalSupply().call()
             logger.info(f"✓ Total supply: {total_supply}")
         except Exception as e:
-            logger.debug(f"Could not fetch total supply: {e}")
-            warnings.append("ℹ️ Could not verify total supply")
+            logger.warning(f"Could not fetch total supply: {e}")
+            warnings.append("ℹ️ Could not verify total supply (RPC issue)")
         
         try:
-            decimals = contract.functions.decimals().call(timeout=2)
+            decimals = contract.functions.decimals().call()
             logger.info(f"✓ Decimals: {decimals}")
         except Exception as e:
-            logger.debug(f"Could not fetch decimals: {e}")
+            logger.warning(f"Could not fetch decimals: {e}")
             decimals = 18  # Default assumption
+            warnings.append("ℹ️ Using default decimals (18)")
         
         # 2. Get bytecode for verification (DISABLED for now - may cause errors)
         bytecode = ""
@@ -195,27 +195,23 @@ async def analyze(address: str, blockchain) -> Dict[str, Any]:
         # 3. Try to get tax values
         buy_tax_raw = try_call_function(
             contract, 
-            ['buyTax', '_buyTax', 'buyFee', 'taxFee', '_taxFee'],
-            timeout=2
+            ['buyTax', '_buyTax', 'buyFee', 'taxFee', '_taxFee']
         )
         
         sell_tax_raw = try_call_function(
             contract,
-            ['sellTax', '_sellTax', 'sellFee', 'taxFee', '_taxFee'],
-            timeout=2
+            ['sellTax', '_sellTax', 'sellFee', 'taxFee', '_taxFee']
         )
         
         # 4. Try to get limits
         max_tx_raw = try_call_function(
             contract,
-            ['maxTransactionAmount', '_maxTxAmount', 'maxTxAmount'],
-            timeout=2
+            ['maxTransactionAmount', '_maxTxAmount', 'maxTxAmount']
         )
         
         max_wallet_raw = try_call_function(
             contract,
-            ['maxWalletAmount', '_maxWalletSize', '_maxWalletAmount', 'maxWallet'],
-            timeout=2
+            ['maxWalletAmount', '_maxWalletSize', '_maxWalletAmount', 'maxWallet']
         )
         
         # 5. Process tax values
@@ -400,9 +396,9 @@ async def analyze(address: str, blockchain) -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"Tokenomics analysis failed: {str(e)}", exc_info=True)
         return {
-            "risk_score": 0,
+            "risk_score": 10,
             "confidence": 0,
-            "warnings": [f"⚠️ Analysis failed: {str(e)}"],
+            "warnings": ["⚠️ Tokenomics analysis incomplete - could not verify token economics"],
             "data": {
                 "error": str(e),
                 "total_supply": None,
