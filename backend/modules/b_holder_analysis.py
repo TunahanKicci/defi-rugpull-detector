@@ -1,3 +1,4 @@
+
 """
 Module B: Holder Analysis
 Analyzes token distribution using 'Active Wallet Sampling' via Etherscan & RPC.
@@ -50,70 +51,92 @@ async def analyze(address: str, blockchain) -> Dict[str, Any]:
         ])
 
         decimals = 18
-        total_supply = 0
+        total_supply = None
         try:
             decimals = contract.functions.decimals().call()
             total_supply_raw = contract.functions.totalSupply().call()
             total_supply = total_supply_raw / (10 ** decimals)
+            data["total_supply"] = total_supply
+            logger.info(f"Total supply: {total_supply:,.0f} tokens")
         except Exception as e:
-            logger.error(f"Failed to fetch supply: {e}")
-            return {"risk_score": 0, "warnings": ["Could not fetch total supply"]}
+            logger.debug(f"Could not fetch total supply via RPC: {e}")
+            # Total supply olmadan da analiz yapabiliriz - sadece yüzde hesaplayamayız
+            pass
 
-        data["total_supply"] = total_supply
-
-        # 2. Aktif Cüzdanları Bul (Etherscan API - tokentx)
-        # Son 100 transferi çekip kimlerin aktif olduğunu buluyoruz.
-        active_addresses = set()
+        # 2. YENİ STRATEJİ: Etherscan API'den transfer verilerini kullan (RPC'siz)
+        # Transfer miktarlarından holder profilini çıkarıyoruz - RPC'ye hiç çağrı yapmıyoruz
+        holder_transfers = {}  # address -> {"incoming": total, "outgoing": total}
         
         try:
+            # Yüksek hacimli tokenlar için blok aralığı stratejisi kullan
+            # Son 100 blok içindeki transferleri çek (yaklaşık 20 dakika)
+            try:
+                latest_block = w3.eth.block_number
+                start_block = latest_block - 100
+            except:
+                # RPC çalışmazsa default range
+                latest_block = 0
+                start_block = 0
+            
             params = {
-                "chainid": 1,  # Ethereum Mainnet
+                "chainid": 1,
                 "module": "account",
                 "action": "tokentx",
                 "contractaddress": checksum_address,
+                "startblock": start_block if start_block > 0 else None,
+                "endblock": latest_block if latest_block > 0 else None,
                 "page": 1,
-                "offset": 100, # Son 100 işlem yeterli
+                "offset": 20,
                 "sort": "desc",
                 "apikey": ETHERSCAN_API_KEY
             }
+            
+            # None değerlerini kaldır
+            params = {k: v for k, v in params.items() if v is not None}
             
             response = requests.get(ETHERSCAN_URL, params=params, timeout=10)
             tx_data = response.json()
             
             if tx_data["status"] == "1" and tx_data["result"]:
+                logger.info(f"Analyzing {len(tx_data['result'])} recent transfers...")
+                
                 for tx in tx_data["result"]:
-                    active_addresses.add(w3.to_checksum_address(tx["from"]))
-                    active_addresses.add(w3.to_checksum_address(tx["to"]))
+                    from_addr = w3.to_checksum_address(tx["from"])
+                    to_addr = w3.to_checksum_address(tx["to"])
+                    value = int(tx["value"]) / (10 ** decimals)
+                    
+                    # Transfer miktarlarını topla
+                    if from_addr not in holder_transfers:
+                        holder_transfers[from_addr] = {"incoming": 0, "outgoing": 0}
+                    if to_addr not in holder_transfers:
+                        holder_transfers[to_addr] = {"incoming": 0, "outgoing": 0}
+                    
+                    holder_transfers[from_addr]["outgoing"] += value
+                    holder_transfers[to_addr]["incoming"] += value
+                
+                logger.info(f"Collected transfer data for {len(holder_transfers)} unique addresses")
             else:
-                logger.warning(f"Etherscan API warning: {tx_data.get('message')}")
+                msg = tx_data.get('message', 'Unknown error')
+                logger.warning(f"Etherscan API returned status 0: {msg}")
                 
         except Exception as api_err:
-            logger.warning(f"Etherscan API failed, falling back to partial checks: {api_err}")
-
-        # Eğer hiç adres bulamazsa (API hatası veya 0 tx), contract owner'ı ekle
-        if not active_addresses:
-            try:
-                owner = contract.functions.owner().call()
-                active_addresses.add(owner)
-            except:
-                pass
+            logger.warning(f"Etherscan API failed: {api_err}")
             
-        # 3. Gerçek Bakiyeleri Sorgula (RPC - balanceOf)
-        # Bulduğumuz adreslerin ŞU ANKİ gerçek bakiyesini soruyoruz.
+        # 3. Transfer Net Balance'ı Hesapla (Proxy Balance)
+        # Net = incoming - outgoing (pozitif = holder, negatif = sattı)
         holder_balances = []
-        whale_holdings = 0
         
-        # Burn adresi (0xdead...) genelde holder sayılmaz, filtreleyebiliriz ama 
-        # supply hesaplamasında önemli olabilir. Şimdilik dahil ediyoruz.
+        for addr, transfers in holder_transfers.items():
+            net_balance = transfers["incoming"] - transfers["outgoing"]
+            if net_balance > 0:  # Sadece pozitif balans olanları al
+                holder_balances.append({
+                    "address": addr,
+                    "balance": net_balance,
+                    "total_incoming": transfers["incoming"],
+                    "total_outgoing": transfers["outgoing"]
+                })
         
-        for addr in list(active_addresses)[:10]: # RPC'yi yormamak için max 10 adres (hızlı test)
-            try:
-                bal_raw = contract.functions.balanceOf(addr).call()
-                bal = bal_raw / (10 ** decimals)
-                if bal > 0:
-                    holder_balances.append({"address": addr, "balance": bal})
-            except:
-                continue
+        logger.info(f"Found {len(holder_balances)} addresses with positive net balance")
 
         # 4. Metrikleri Hesapla
         # Bakiyeye göre sırala (Büyükten küçüğe)
@@ -123,10 +146,16 @@ async def analyze(address: str, blockchain) -> Dict[str, Any]:
         top_10_holders = holder_balances[:10]
         top_10_sum = sum(h["balance"] for h in top_10_holders)
         
-        # Top 10 Yüzdesi
+        # Top 10 Yüzdesi (eğer total supply varsa)
         top_10_ratio = 0
-        if total_supply > 0:
+        if total_supply and total_supply > 0:
             top_10_ratio = top_10_sum / total_supply
+        else:
+            # Total supply yoksa, relative scoring (top 10 / tüm örneklem)
+            total_sample = sum(h["balance"] for h in holder_balances)
+            if total_sample > 0:
+                top_10_ratio = top_10_sum / total_sample
+                warnings.append("ℹ️ Using sample-based ratio (total supply unavailable)")
 
         # Gini Katsayısı (Sadece örneklem üzerinden)
         balances_list = [h["balance"] for h in holder_balances]
@@ -150,10 +179,14 @@ async def analyze(address: str, blockchain) -> Dict[str, Any]:
             risk_score += 10
             warnings.append("⚠️ High inequality between active holders")
 
-        # Kural 3: Çok az holder verisi varsa
-        if len(holder_balances) < 5:
-            warnings.append("ℹ️ Very few active holders found (Low Adoption)")
-            risk_score += 10
+        # Kural 3: Çok az holder verisi varsa (örneklem boyutu uyarısı)
+        sample_size = len(holder_balances)
+        if sample_size < 5:
+            warnings.append(f"⚠️ Limited sample size ({sample_size} holders) - results may not be representative")
+            risk_score += 15
+        elif sample_size < 10:
+            warnings.append(f"ℹ️ Moderate sample size ({sample_size} holders) - consider as estimation")
+            risk_score += 5
 
         data["top_10_ratio"] = float(f"{top_10_ratio:.4f}")
         data["gini_coefficient"] = float(f"{gini_coefficient:.4f}")
