@@ -239,18 +239,37 @@ async def analyze(address: str, blockchain) -> Dict[str, Any]:
         # Minimum threshold check
         if len(all_transfers) < 10:
             logger.warning(f"Insufficient transfer data ({len(all_transfers)} transfers)")
+            
+            # Scaled risk based on activity level
+            # 0 transfers = 20 risk (dead project)
+            # 1-3 transfers = 10 risk (very low activity)
+            # 4-9 transfers = 5 risk (low but some activity)
+            if len(all_transfers) == 0:
+                activity_risk = 20
+                activity_msg = "⚠️ No recent on-chain activity detected"
+            elif len(all_transfers) <= 3:
+                activity_risk = 10
+                activity_msg = "⚡ Very low on-chain activity (may be CEX-traded)"
+            else:
+                activity_risk = 5
+                activity_msg = "ℹ️ Low on-chain activity (insufficient for holder analysis)"
+            
             return {
-                "risk_score": 0,
+                "risk_score": activity_risk,
                 "confidence": 10,
                 "warnings": [
-                    "⚠️ Insufficient transfer data for analysis",
-                    f"ℹ️ Only {len(all_transfers)} recent transfers found"
+                    "⚠️ Insufficient transfer data for holder analysis",
+                    f"ℹ️ Only {len(all_transfers)} recent transfers found",
+                    activity_msg
                 ],
                 "data": {
                     "analyzed_wallet_count": 0,
+                    "total_transfers_analyzed": len(all_transfers),
                     "data_quality": "insufficient"
                 },
-                "features": {}
+                "features": {
+                    "activity_level": len(all_transfers) / 100  # Normalized activity score
+                }
             }
 
         # 3. Build holder profile from transfers
