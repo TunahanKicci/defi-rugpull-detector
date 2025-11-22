@@ -71,7 +71,7 @@ ml_model = MockMLModel()
 
 async def predict(features: Dict[str, float], module_results: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
     """
-    Predict final risk score using ML model
+    Predict final risk score using ML model with CRITICAL ISSUE DETECTION
     
     Args:
         features: Extracted features from all modules
@@ -81,43 +81,115 @@ async def predict(features: Dict[str, float], module_results: Dict[str, Dict[str
         ML prediction result
     """
     try:
-        # Calculate ML risk score
+        # CRITICAL: Check for deal-breaker issues
+        contract_security = module_results.get("contract_security", {})
+        liquidity_pool = module_results.get("liquidity_pool", {})
+        
+        # Deal-breaker 1: No bytecode (scam indicator)
+        if contract_security.get("risk_score", 0) >= 50:
+            warnings = contract_security.get("warnings", [])
+            if any("bytecode" in str(w).lower() or "obfuscated" in str(w).lower() for w in warnings):
+                logger.warning("🚨 CRITICAL: Bytecode unavailable - forcing HIGH risk")
+                return {
+                    "risk_score": 75.0,  # Force HIGH risk
+                    "feature_importance": {"bytecode_unavailable": 1.0},
+                    "confidence": 90,
+                    "reason": "Contract bytecode unavailable or obfuscated"
+                }
+        
+        # Deal-breaker 2: Very low liquidity (<$10k) + no activity
+        liq_risk = liquidity_pool.get("risk_score", 0)
+        if liq_risk >= 60:
+            transfer_anomaly = module_results.get("transfer_anomaly", {})
+            if transfer_anomaly.get("risk_score", 0) >= 30:
+                logger.warning("🚨 CRITICAL: Low liquidity + no activity = DEAD/SCAM")
+                return {
+                    "risk_score": 70.0,  # Force HIGH risk
+                    "feature_importance": {"low_liquidity_no_activity": 1.0},
+                    "confidence": 85,
+                    "reason": "Very low liquidity with no trading activity"
+                }
+        
+        # Calculate ML risk score (for non-critical cases)
         ml_risk_score = ml_model.predict(features)
         
-        # Calculate average module score
-        module_scores = [
-            result.get("risk_score", 50)
-            for result in module_results.values()
-        ]
-        avg_module_score = np.mean(module_scores) if module_scores else 50
+        # Calculate WEIGHTED module scores (some modules more important)
+        module_weights = {
+            "contract_security": 3.0,     # Most important
+            "liquidity_pool": 2.5,         # Very important
+            "holder_analysis": 2.0,        # Important
+            "transfer_anomaly": 1.5,       # Moderate
+            "pattern_matching": 1.0        # Supporting
+        }
         
-        # Weighted combination: 70% ML, 30% module average
-        final_score = 0.7 * ml_risk_score + 0.3 * avg_module_score
+        weighted_score = 0
+        total_weight = 0
+        
+        for module_name, result in module_results.items():
+            weight = module_weights.get(module_name, 1.0)
+            score = result.get("risk_score", 50)
+            weighted_score += score * weight
+            total_weight += weight
+        
+        avg_module_score = weighted_score / total_weight if total_weight > 0 else 50
+        
+        # Adaptive weighting based on confidence
+        # High confidence → trust ML more
+        # Low confidence → trust modules more
+        confidence = 60  # Base confidence
+        
+        if ml_risk_score > 70 and avg_module_score > 60:
+            # Both agree it's high risk - high confidence
+            confidence = 90
+            final_score = 0.7 * ml_risk_score + 0.3 * avg_module_score
+        elif abs(ml_risk_score - avg_module_score) < 10:
+            # Close agreement - moderate confidence
+            confidence = 75
+            final_score = 0.6 * ml_risk_score + 0.4 * avg_module_score
+        else:
+            # Disagreement - trust modules more (they use real data)
+            confidence = 50
+            final_score = 0.3 * ml_risk_score + 0.7 * avg_module_score
         
         # Get feature importance
         feature_importance = ml_model.get_feature_importance(features)
         
-        logger.info(f"ML risk score: {ml_risk_score:.2f}, Module avg: {avg_module_score:.2f}, Final: {final_score:.2f}")
+        logger.info(f"ML risk: {ml_risk_score:.1f}, Module weighted: {avg_module_score:.1f}, Final: {final_score:.1f} (confidence: {confidence}%)")
         
         return {
             "risk_score": round(final_score, 2),
             "ml_score": round(ml_risk_score, 2),
             "module_average": round(avg_module_score, 2),
+            "confidence": confidence,
             "feature_importance": feature_importance
         }
         
     except Exception as e:
         logger.error(f"ML prediction failed: {str(e)}")
-        # Fallback to module average
-        module_scores = [
-            result.get("risk_score", 50)
-            for result in module_results.values()
-        ]
-        fallback_score = np.mean(module_scores) if module_scores else 50
+        # Fallback to WEIGHTED module average
+        module_weights = {
+            "contract_security": 3.0,
+            "liquidity_pool": 2.5,
+            "holder_analysis": 2.0,
+            "transfer_anomaly": 1.5,
+            "pattern_matching": 1.0
+        }
+        
+        weighted_score = 0
+        total_weight = 0
+        
+        for module_name, result in module_results.items():
+            weight = module_weights.get(module_name, 1.0)
+            score = result.get("risk_score", 50)
+            weighted_score += score * weight
+            total_weight += weight
+        
+        fallback_score = weighted_score / total_weight if total_weight > 0 else 50
         
         return {
             "risk_score": round(fallback_score, 2),
             "ml_score": None,
             "module_average": round(fallback_score, 2),
+            "confidence": 50,
             "feature_importance": {}
         }
