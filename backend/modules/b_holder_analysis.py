@@ -1,58 +1,224 @@
-
-
 """
-Module B: Holder Analysis
-Analyzes token distribution using 'Active Wallet Sampling' via Etherscan & RPC.
-Replaces mock data with real on-chain balance checks.
+Module B: Holder Analysis - IMPROVED VERSION
+Analyzes token distribution using multi-page Etherscan API + fallback strategies
 """
 import logging
 import requests
-from typing import Dict, Any, List
+import asyncio
+from typing import Dict, Any, List, Optional
 from web3 import Web3
 from config.settings import settings
 
 logger = logging.getLogger(__name__)
 
-# Etherscan API Ayarları
+# Etherscan API Settings
 ETHERSCAN_API_KEY = settings.ETHERSCAN_API_KEY
 ETHERSCAN_URL = "https://api.etherscan.io/v2/api"
 
+# Known system addresses to filter out
+SYSTEM_ADDRESSES = {
+    "0x0000000000000000000000000000000000000000",  # Burn address
+    "0x000000000000000000000000000000000000dead",  # Dead address
+    "0xdead000000000000000042069420694206942069",  # Another burn
+}
+
+
 def calculate_gini(balances: List[float]) -> float:
     """
-    Gini katsayısını hesaplar (0: Eşit dağılım, 1: Tam eşitsizlik/Merkeziyetçi).
+    Calculate Gini coefficient (0: Equal distribution, 1: Total inequality)
     """
-    if not balances: return 0.0
+    if not balances or len(balances) < 2:
+        return 0.0
+    
     sorted_balances = sorted(balances)
     n = len(balances)
     cumulative_sum = sum((i + 1) * bal for i, bal in enumerate(sorted_balances))
     total_sum = sum(sorted_balances)
-    if total_sum == 0: return 0.0
+    
+    if total_sum == 0:
+        return 0.0
+    
     return (2 * cumulative_sum) / (n * total_sum) - (n + 1) / n
+
+
+async def fetch_transfers_multi_page(
+    checksum_address: str,
+    w3: Web3,
+    max_pages: int = 3,
+    offset_per_page: int = 1000
+) -> List[Dict]:
+    """
+    Fetch multiple pages of transfers from Etherscan API with smart timeout handling
+    
+    Args:
+        checksum_address: Token contract address
+        w3: Web3 instance
+        max_pages: Maximum number of pages to fetch (default 3 for speed)
+        offset_per_page: Number of transactions per page
+        
+    Returns:
+        List of transfer transactions
+    """
+    all_transfers = []
+    
+    try:
+        # Use recent blocks only (last ~1 day ≈ 7000 blocks for faster queries)
+        try:
+            latest_block = w3.eth.block_number
+            start_block = max(0, latest_block - 7000)
+            logger.info(f"Querying blocks {start_block} to {latest_block}")
+        except Exception as e:
+            logger.debug(f"Could not fetch block number: {e}")
+            latest_block = None
+            start_block = None
+        
+        for page in range(1, max_pages + 1):
+            try:
+                params = {
+                    "chainid": 1,
+                    "module": "account",
+                    "action": "tokentx",
+                    "contractaddress": checksum_address,
+                    "page": page,
+                    "offset": offset_per_page,
+                    "sort": "desc",
+                    "apikey": ETHERSCAN_API_KEY
+                }
+                
+                # Add block range if available
+                if start_block is not None:
+                    params["startblock"] = start_block
+                if latest_block is not None:
+                    params["endblock"] = latest_block
+                
+                # Progressive timeout: first page longer, subsequent shorter
+                timeout = 10 if page == 1 else 5
+                
+                logger.info(f"Fetching page {page} (timeout: {timeout}s)...")
+                response = requests.get(ETHERSCAN_URL, params=params, timeout=timeout)
+                tx_data = response.json()
+                
+                if tx_data["status"] == "1" and tx_data["result"]:
+                    transfers = tx_data["result"]
+                    all_transfers.extend(transfers)
+                    logger.info(f"✓ Page {page}: {len(transfers)} transfers (Total: {len(all_transfers)})")
+                    
+                    # If we got less than offset, we've reached the end
+                    if len(transfers) < offset_per_page:
+                        logger.info("Reached end of available transfers")
+                        break
+                    
+                    # Tiny delay to respect API rate limits
+                    await asyncio.sleep(0.1)
+                else:
+                    msg = tx_data.get('message', 'Unknown error')
+                    logger.warning(f"Page {page} returned no data: {msg}")
+                    # Don't break - try next page
+                    if page == 1:
+                        break  # If first page fails, stop
+                    
+            except requests.exceptions.Timeout:
+                logger.warning(f"⏱️ Page {page} timeout - continuing with available data")
+                # Don't break - we can still use data from previous pages
+                break
+                    
+            except Exception as page_err:
+                logger.warning(f"Error on page {page}: {page_err}")
+                # Continue if we have data from previous pages
+                if len(all_transfers) > 0:
+                    logger.info(f"Continuing with {len(all_transfers)} transfers from previous pages")
+                    break
+                else:
+                    break
+        
+        logger.info(f"✅ Total transfers fetched: {len(all_transfers)}")
+        return all_transfers
+        
+    except Exception as e:
+        logger.error(f"Multi-page fetch failed: {e}")
+        return all_transfers  # Return whatever we got
+
+
+async def get_real_balances_sample(
+    addresses: List[str],
+    contract,
+    decimals: int,
+    max_calls: int = 50
+) -> Dict[str, float]:
+    """
+    Get real on-chain balances for a sample of addresses via RPC
+    
+    Args:
+        addresses: List of addresses to check
+        contract: Web3 contract instance
+        decimals: Token decimals
+        max_calls: Maximum number of RPC calls to make
+        
+    Returns:
+        Dict of address -> balance
+    """
+    balances = {}
+    
+    # Take a sample if too many addresses
+    sample_addresses = addresses[:max_calls]
+    
+    logger.info(f"Fetching real balances for {len(sample_addresses)} addresses...")
+    
+    for i, addr in enumerate(sample_addresses):
+        try:
+            # Skip system addresses
+            if addr.lower() in [a.lower() for a in SYSTEM_ADDRESSES]:
+                continue
+            
+            balance_raw = contract.functions.balanceOf(addr).call()
+            balance = balance_raw / (10 ** decimals)
+            
+            if balance > 0:
+                balances[addr] = balance
+            
+            # Progress log every 10 addresses
+            if (i + 1) % 10 == 0:
+                logger.debug(f"Checked {i + 1}/{len(sample_addresses)} addresses")
+                
+        except Exception as e:
+            logger.debug(f"Could not fetch balance for {addr}: {e}")
+            continue
+    
+    logger.info(f"Successfully fetched {len(balances)} non-zero balances")
+    return balances
+
 
 async def analyze(address: str, blockchain) -> Dict[str, Any]:
     """
-    Gerçek zamanlı Holder analizi yapar.
-    Yöntem: Son transferlerden aktif cüzdanları bul -> RPC ile gerçek bakiyelerini sor.
+    IMPROVED Real-time Holder Analysis
+    
+    Strategy:
+    1. Fetch multiple pages of transfers (up to 5000 txs)
+    2. Build holder profile from transfer patterns
+    3. Verify top holders with real RPC balance checks
+    4. Calculate distribution metrics
     """
     try:
-        logger.info(f"Starting Real Holder Analysis for {address}...")
+        logger.info(f"Starting IMPROVED Holder Analysis for {address}...")
         
         data = {}
         warnings = []
         risk_score = 0
+        confidence_score = 0
         
         w3 = blockchain.w3
         checksum_address = w3.to_checksum_address(address)
 
-        # 1. Toplam Arzı (Total Supply) Çek - RPC
+        # 1. Get token metadata
         contract = w3.eth.contract(address=checksum_address, abi=[
-            {"constant":True,"inputs":[],"name":"totalSupply","outputs":[{"name":"","type":"uint256"}],"type":"function"},
-            {"constant":True,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"type":"function"},
-            {"constant":True,"inputs":[{"name":"_owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"balance","type":"uint256"}],"type":"function"}
+            {"constant": True, "inputs": [], "name": "totalSupply", "outputs": [{"name": "", "type": "uint256"}], "type": "function"},
+            {"constant": True, "inputs": [], "name": "decimals", "outputs": [{"name": "", "type": "uint8"}], "type": "function"},
+            {"constant": True, "inputs": [{"name": "_owner", "type": "address"}], "name": "balanceOf", "outputs": [{"name": "balance", "type": "uint256"}], "type": "function"}
         ])
 
         decimals = 18
         total_supply = None
+        
         try:
             decimals = contract.functions.decimals().call()
             total_supply_raw = contract.functions.totalSupply().call()
@@ -60,160 +226,208 @@ async def analyze(address: str, blockchain) -> Dict[str, Any]:
             data["total_supply"] = total_supply
             logger.info(f"Total supply: {total_supply:,.0f} tokens")
         except Exception as e:
-            logger.debug(f"Could not fetch total supply via RPC: {e}")
-            # Total supply olmadan da analiz yapabiliriz - sadece yüzde hesaplayamayız
-            pass
+            logger.warning(f"Could not fetch total supply: {e}")
 
-        # 2. YENİ STRATEJİ: Etherscan API'den transfer verilerini kullan (RPC'siz)
-        # Transfer miktarlarından holder profilini çıkarıyoruz - RPC'ye hiç çağrı yapmıyoruz
-        holder_transfers = {}  # address -> {"incoming": total, "outgoing": total}
+        # 2. Fetch multiple pages of transfers (reduced for speed)
+        all_transfers = await fetch_transfers_multi_page(
+            checksum_address, 
+            w3,
+            max_pages=3,  # Reduced from 5 to 3 for speed
+            offset_per_page=1000
+        )
         
-        try:
-            # Yüksek hacimli tokenlar için blok aralığı stratejisi kullan
-            # Son 100 blok içindeki transferleri çek (yaklaşık 20 dakika)
-            try:
-                latest_block = w3.eth.block_number
-                start_block = latest_block - 100
-            except:
-                # RPC çalışmazsa default range
-                latest_block = 0
-                start_block = 0
-            
-            params = {
-                "chainid": 1,
-                "module": "account",
-                "action": "tokentx",
-                "contractaddress": checksum_address,
-                "startblock": start_block if start_block > 0 else None,
-                "endblock": latest_block if latest_block > 0 else None,
-                "page": 1,
-                "offset": 20,
-                "sort": "desc",
-                "apikey": ETHERSCAN_API_KEY
+        # Minimum threshold check
+        if len(all_transfers) < 10:
+            logger.warning(f"Insufficient transfer data ({len(all_transfers)} transfers)")
+            return {
+                "risk_score": 0,
+                "confidence": 10,
+                "warnings": [
+                    "⚠️ Insufficient transfer data for analysis",
+                    f"ℹ️ Only {len(all_transfers)} recent transfers found"
+                ],
+                "data": {
+                    "analyzed_wallet_count": 0,
+                    "data_quality": "insufficient"
+                },
+                "features": {}
             }
-            
-            # None değerlerini kaldır
-            params = {k: v for k, v in params.items() if v is not None}
-            
-            response = requests.get(ETHERSCAN_URL, params=params, timeout=10)
-            tx_data = response.json()
-            
-            if tx_data["status"] == "1" and tx_data["result"]:
-                logger.info(f"Analyzing {len(tx_data['result'])} recent transfers...")
+
+        # 3. Build holder profile from transfers
+        holder_transfers = {}
+        unique_addresses = set()
+        
+        for tx in all_transfers:
+            try:
+                from_addr = w3.to_checksum_address(tx["from"])
+                to_addr = w3.to_checksum_address(tx["to"])
+                value = int(tx["value"]) / (10 ** decimals)
                 
-                for tx in tx_data["result"]:
-                    from_addr = w3.to_checksum_address(tx["from"])
-                    to_addr = w3.to_checksum_address(tx["to"])
-                    value = int(tx["value"]) / (10 ** decimals)
-                    
-                    # Transfer miktarlarını topla
-                    if from_addr not in holder_transfers:
-                        holder_transfers[from_addr] = {"incoming": 0, "outgoing": 0}
-                    if to_addr not in holder_transfers:
-                        holder_transfers[to_addr] = {"incoming": 0, "outgoing": 0}
-                    
-                    holder_transfers[from_addr]["outgoing"] += value
-                    holder_transfers[to_addr]["incoming"] += value
+                # Track all addresses
+                unique_addresses.add(from_addr)
+                unique_addresses.add(to_addr)
                 
-                logger.info(f"Collected transfer data for {len(holder_transfers)} unique addresses")
-            else:
-                msg = tx_data.get('message', 'Unknown error')
-                logger.warning(f"Etherscan API returned status 0: {msg}")
+                # Initialize holders
+                if from_addr not in holder_transfers:
+                    holder_transfers[from_addr] = {"incoming": 0, "outgoing": 0}
+                if to_addr not in holder_transfers:
+                    holder_transfers[to_addr] = {"incoming": 0, "outgoing": 0}
                 
-        except Exception as api_err:
-            logger.warning(f"Etherscan API failed: {api_err}")
-            
-        # 3. Transfer Net Balance'ı Hesapla (Proxy Balance)
-        # Net = incoming - outgoing (pozitif = holder, negatif = sattı)
-        holder_balances = []
+                # Aggregate transfers
+                holder_transfers[from_addr]["outgoing"] += value
+                holder_transfers[to_addr]["incoming"] += value
+                
+            except Exception as e:
+                continue
+        
+        logger.info(f"Analyzed {len(all_transfers)} transfers, found {len(unique_addresses)} unique addresses")
+
+        # 4. Calculate net balances from transfers
+        holder_net_balances = []
         
         for addr, transfers in holder_transfers.items():
+            # Skip system addresses
+            if addr.lower() in [a.lower() for a in SYSTEM_ADDRESSES]:
+                continue
+            
             net_balance = transfers["incoming"] - transfers["outgoing"]
-            if net_balance > 0:  # Sadece pozitif balans olanları al
-                holder_balances.append({
+            
+            if net_balance > 0:
+                holder_net_balances.append({
                     "address": addr,
                     "balance": net_balance,
-                    "total_incoming": transfers["incoming"],
-                    "total_outgoing": transfers["outgoing"]
+                    "incoming": transfers["incoming"],
+                    "outgoing": transfers["outgoing"]
                 })
         
-        logger.info(f"Found {len(holder_balances)} addresses with positive net balance")
-
-        # 4. Metrikleri Hesapla
-        # Bakiyeye göre sırala (Büyükten küçüğe)
-        holder_balances.sort(key=lambda x: x["balance"], reverse=True)
+        # Sort by balance
+        holder_net_balances.sort(key=lambda x: x["balance"], reverse=True)
         
-        # Top 10 Holder Hesabı
-        top_10_holders = holder_balances[:10]
+        logger.info(f"Found {len(holder_net_balances)} addresses with positive net balance")
+
+        # 5. VERIFICATION: Get real balances for top 15 holders (reduced from 20)
+        top_addresses = [h["address"] for h in holder_net_balances[:15]]
+        
+        real_balances = await get_real_balances_sample(
+            top_addresses,
+            contract,
+            decimals,
+            max_calls=15  # Reduced from 20
+        )
+        
+        # If we got real balances, use them for top holders
+        if real_balances:
+            verified_holders = [
+                {"address": addr, "balance": bal}
+                for addr, bal in real_balances.items()
+            ]
+            verified_holders.sort(key=lambda x: x["balance"], reverse=True)
+            
+            logger.info(f"Verified {len(verified_holders)} top holder balances via RPC")
+            
+            # Use verified balances for top 10, estimated for the rest
+            top_10_holders = verified_holders[:10]
+            confidence_score = 80  # High confidence with real data
+        else:
+            # Fallback to net balance estimates
+            top_10_holders = holder_net_balances[:10]
+            confidence_score = 50  # Medium confidence with estimates
+            warnings.append("ℹ️ Using transfer-based balance estimates (RPC unavailable)")
+
+        # 6. Calculate metrics
         top_10_sum = sum(h["balance"] for h in top_10_holders)
         
-        # Top 10 Yüzdesi (eğer total supply varsa)
+        # Top 10 ratio
         top_10_ratio = 0
         if total_supply and total_supply > 0:
             top_10_ratio = top_10_sum / total_supply
         else:
-            # Total supply yoksa, relative scoring (top 10 / tüm örneklem)
-            total_sample = sum(h["balance"] for h in holder_balances)
+            # Relative ratio if no supply
+            total_sample = sum(h["balance"] for h in holder_net_balances)
             if total_sample > 0:
                 top_10_ratio = top_10_sum / total_sample
                 warnings.append("ℹ️ Using sample-based ratio (total supply unavailable)")
+                confidence_score -= 10
 
-        # Gini Katsayısı (Sadece örneklem üzerinden)
-        balances_list = [h["balance"] for h in holder_balances]
-        gini_coefficient = calculate_gini(balances_list)
+        # Gini coefficient
+        all_balances = [h["balance"] for h in holder_net_balances]
+        gini_coefficient = calculate_gini(all_balances)
 
-        # 5. Risk Skorlama
+        # Sample size for confidence
+        sample_size = len(holder_net_balances)
         
-        # Kural 1: Top 10 çok yüksekse (>%95)
-        if top_10_ratio > 0.98:
+        # Adjust confidence based on sample size
+        if sample_size < 10:
+            confidence_score = max(20, confidence_score - 30)
+        elif sample_size < 50:
+            confidence_score = max(40, confidence_score - 15)
+        elif sample_size >= 100:
+            confidence_score = min(100, confidence_score + 10)
+
+        # 7. Risk Scoring
+        
+        # Centralization risk
+        if top_10_ratio > 0.95:
             risk_score += 60
             warnings.append(f"🚨 EXTREME CENTRALIZATION: Top 10 holders own {top_10_ratio*100:.1f}%")
-        elif top_10_ratio > 0.90:
-            risk_score += 40
-            warnings.append(f"⚠️ High Centralization: Top 10 own {top_10_ratio*100:.1f}%")
+        elif top_10_ratio > 0.85:
+            risk_score += 45
+            warnings.append(f"🚨 Very High Centralization: Top 10 own {top_10_ratio*100:.1f}%")
         elif top_10_ratio > 0.70:
+            risk_score += 30
+            warnings.append(f"⚠️ High Centralization: Top 10 own {top_10_ratio*100:.1f}%")
+        elif top_10_ratio > 0.50:
             risk_score += 15
-            warnings.append(f"ℹ️ Concentrated supply: Top 10 own {top_10_ratio*100:.1f}%")
+            warnings.append(f"⚡ Concentrated supply: Top 10 own {top_10_ratio*100:.1f}%")
 
-        # Kural 2: Gini Katsayısı
-        if gini_coefficient > 0.9:
+        # Gini inequality risk
+        if gini_coefficient > 0.95:
+            risk_score += 15
+            warnings.append(f"⚠️ Extreme inequality (Gini: {gini_coefficient:.3f})")
+        elif gini_coefficient > 0.85:
             risk_score += 10
-            warnings.append("⚠️ High inequality between active holders")
+            warnings.append(f"⚡ High inequality between holders (Gini: {gini_coefficient:.3f})")
 
-        # Kural 3: Çok az holder verisi varsa (örneklem boyutu uyarısı)
-        sample_size = len(holder_balances)
+        # Sample size warnings
         if sample_size < 5:
-            warnings.append(f"⚠️ Limited sample size ({sample_size} holders) - results may not be representative")
-            risk_score += 15
-        elif sample_size < 10:
-            warnings.append(f"ℹ️ Moderate sample size ({sample_size} holders) - consider as estimation")
+            warnings.append(f"⚠️ Very limited sample ({sample_size} holders) - LOW CONFIDENCE")
+            risk_score += 20
+        elif sample_size < 20:
+            warnings.append(f"ℹ️ Small sample size ({sample_size} holders) - use as estimate")
             risk_score += 5
 
+        # Data quality
         data["top_10_ratio"] = float(f"{top_10_ratio:.4f}")
         data["gini_coefficient"] = float(f"{gini_coefficient:.4f}")
-        data["analyzed_wallet_count"] = len(holder_balances)
-        data["top_holders"] = top_10_holders # Frontend'de listelemek için
+        data["analyzed_wallet_count"] = sample_size
+        data["total_transfers_analyzed"] = len(all_transfers)
+        data["confidence_score"] = confidence_score
+        data["top_holders"] = top_10_holders[:10]
+        data["data_quality"] = "high" if confidence_score >= 70 else "medium" if confidence_score >= 40 else "low"
 
         features = {
             "top_10_ratio": float(top_10_ratio),
             "gini_coefficient": float(gini_coefficient),
-            "holder_count_proxy": len(holder_balances)
+            "holder_count_proxy": min(sample_size / 100, 1.0),
+            "confidence": float(confidence_score / 100)
         }
 
-        logger.info(f"B Module Analysis Complete. Risk: {risk_score}")
+        logger.info(f"✅ Holder Analysis Complete: Risk={risk_score}, Confidence={confidence_score}%, Sample={sample_size}")
         
         return {
             "risk_score": min(risk_score, 100),
+            "confidence": confidence_score,
             "warnings": warnings,
             "data": data,
             "features": features
         }
 
     except Exception as e:
-        logger.error(f"Holder analysis failed: {str(e)}")
+        logger.error(f"Holder analysis failed: {str(e)}", exc_info=True)
         return {
             "risk_score": 0,
-            "warnings": [f"Module B Error: {str(e)}"],
-            "data": {},
+            "confidence": 0,
+            "warnings": [f"⚠️ Analysis failed: {str(e)}"],
+            "data": {"analyzed_wallet_count": 0},
             "features": {}
         }
