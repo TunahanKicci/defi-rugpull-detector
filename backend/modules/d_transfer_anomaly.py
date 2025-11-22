@@ -48,15 +48,16 @@ async def analyze(address: str, blockchain) -> Dict[str, Any]:
         except Exception as e:
             logger.warning(f"Could not fetch supply/decimals: {e}")
 
-        # 3. Transfer Loglarını Çek (Son 2000 Blok - Biraz artırdık)
+        # 3. Transfer Loglarını Çek (Son 100 Blok - USDT gibi yüksek hacimli tokenlar için düşük)
         try:
             current_block = w3.eth.block_number
-            start_block_int = max(0, current_block - 999) # 1000 az geldi, 2000 deniyoruz
+            # 100 blok = ~20 dakika, yeterli örneklem
+            start_block_int = max(0, current_block - 100)
             
             from_block_hex = w3.to_hex(start_block_int)
             to_block_hex = w3.to_hex(current_block) 
             
-            logger.info(f"Fetching logs: {from_block_hex} to {to_block_hex}")
+            logger.info(f"Fetching logs from last 100 blocks: {from_block_hex} to {to_block_hex}")
 
             logs = w3.eth.get_logs({
                 'fromBlock': from_block_hex,  
@@ -64,8 +65,13 @@ async def analyze(address: str, blockchain) -> Dict[str, Any]:
                 'address': checksum_address,
                 'topics': [TRANSFER_EVENT_TOPIC]
             })
+            logger.info(f"Successfully fetched {len(logs)} transfer logs")
         except Exception as log_err:
-            logger.error(f"Log fetch error: {log_err}")
+            # RPC "query exceeds" hatası için daha açıklayıcı log
+            if 'query exceeds' in str(log_err):
+                logger.warning(f"Token has too many transfers, using empty dataset: {log_err}")
+            else:
+                logger.error(f"Log fetch error: {log_err}")
             logs = []
 
         total_transfers = len(logs)

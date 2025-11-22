@@ -8,6 +8,30 @@ from web3 import Web3
 
 logger = logging.getLogger(__name__)
 
+# Chainlink Price Feed ABI (ETH/USD)
+CHAINLINK_PRICE_FEED_ABI = [
+    {
+        "inputs": [],
+        "name": "latestRoundData",
+        "outputs": [
+            {"name": "roundId", "type": "uint80"},
+            {"name": "answer", "type": "int256"},
+            {"name": "startedAt", "type": "uint256"},
+            {"name": "updatedAt", "type": "uint256"},
+            {"name": "answeredInRound", "type": "uint80"}
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    }
+]
+
+# Chainlink ETH/USD Price Feeds
+CHAINLINK_PRICE_FEEDS = {
+    "ethereum": "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419",  # ETH/USD
+    "bsc": "0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE",      # BNB/USD
+    "polygon": "0xAB594600376Ec9fD91F8e885dADF0CE036862dE0"   # MATIC/USD
+}
+
 # Uniswap V2 Pair ABI (minimal)
 PAIR_ABI = [
     {
@@ -64,6 +88,42 @@ DEX_FACTORIES = {
         "quickswap": "0x5757371414417b8C6CAad45bAeF941aBc7d3Ab32"
     }
 }
+
+
+async def get_eth_price(blockchain) -> float:
+    """
+    Get current ETH/BNB/MATIC price from Chainlink oracle
+    
+    Args:
+        blockchain: Blockchain client instance
+        
+    Returns:
+        Current price in USD (fallback to $2000 if fails)
+    """
+    try:
+        chain_name = blockchain.chain_name
+        price_feed_address = CHAINLINK_PRICE_FEEDS.get(chain_name)
+        
+        if not price_feed_address:
+            logger.debug(f"No Chainlink feed for {chain_name}, using fallback")
+            return 2000.0
+        
+        w3 = blockchain.w3
+        price_feed = w3.eth.contract(
+            address=Web3.to_checksum_address(price_feed_address),
+            abi=CHAINLINK_PRICE_FEED_ABI
+        )
+        
+        # Get latest price
+        latest_data = price_feed.functions.latestRoundData().call()
+        price = latest_data[1] / 1e8  # Chainlink returns 8 decimals
+        
+        logger.info(f"Chainlink price for {chain_name}: ${price:.2f}")
+        return price
+        
+    except Exception as e:
+        logger.debug(f"Chainlink price fetch failed: {e}, using fallback $2000")
+        return 2000.0
 
 
 async def get_pair_address(token_address: str, blockchain) -> str:
@@ -174,10 +234,11 @@ async def analyze_liquidity_pool(pair_address: str, token_address: str, blockcha
         
         logger.info(f"Liquidity: {token_liquidity:.2f} token, {paired_liquidity:.4f} paired")
         
-        # Rough USD estimate (assuming paired token is ETH/BNB at ~$2000)
-        # In production, would fetch real price from oracle
-        paired_token_price = 2000
+        # Get real-time price from Chainlink
+        paired_token_price = await get_eth_price(blockchain)
         total_liquidity_usd = paired_liquidity * paired_token_price * 2
+        
+        logger.info(f"Total liquidity: ${total_liquidity_usd:,.0f} (paired token @ ${paired_token_price:.2f})")
         
         return {
             "token_liquidity": token_liquidity,
