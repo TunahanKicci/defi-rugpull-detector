@@ -31,7 +31,14 @@ export default {
           800: '#991b1b',
           900: '#7f1d1d',
         }
-      }
+      },
+      animation: {
+        'pulse': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+      },
+      animationDelay: {
+        '1000': '1000ms',
+        '2000': '2000ms',
+      },
     },
   },
   plugins: [],
