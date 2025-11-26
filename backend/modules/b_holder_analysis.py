@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 # Etherscan API Settings
 ETHERSCAN_API_KEY = settings.ETHERSCAN_API_KEY
-ETHERSCAN_URL = "https://api.etherscan.io/v2/api"
+ETHERSCAN_URL = "https://api.etherscan.io/v2/api"  # V2 API (V1 deprecated)
 
 # Known system addresses to filter out
 SYSTEM_ADDRESSES = {

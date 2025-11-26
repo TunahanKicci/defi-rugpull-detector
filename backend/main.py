@@ -15,8 +15,21 @@ from api.middleware.error_handler import ErrorHandlerMiddleware
 from config.settings import settings
 from utils.logger import setup_logger
 
-# Setup logging
+# Setup logging for main module
 logger = setup_logger(__name__)
+
+# Setup root logger to capture all module logs
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.INFO)
+
+# Add console handler to root logger if not already present
+if not root_logger.handlers:
+    import sys
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(levelname)s - %(name)s - %(message)s')
+    console_handler.setFormatter(formatter)
+    root_logger.addHandler(console_handler)
 
 
 @asynccontextmanager

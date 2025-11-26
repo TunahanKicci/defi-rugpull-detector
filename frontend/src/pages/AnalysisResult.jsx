@@ -33,19 +33,33 @@ export default function AnalysisResult() {
   const [result, setResult] = useState(null)
 
   useEffect(() => {
+    let cancelled = false
+    
     const fetchAnalysis = async () => {
       try {
         setLoading(true)
+        setError(null)
         const data = await analyzeToken(address, chain)
-        setResult(data)
+        
+        if (!cancelled) {
+          setResult(data)
+        }
       } catch (err) {
-        setError(err.message || 'Failed to analyze token')
+        if (!cancelled) {
+          setError(err.message || 'Failed to analyze token')
+        }
       } finally {
-        setLoading(false)
+        if (!cancelled) {
+          setLoading(false)
+        }
       }
     }
 
     fetchAnalysis()
+    
+    return () => {
+      cancelled = true
+    }
   }, [address, chain])
 
   if (loading) {
