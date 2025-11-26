@@ -193,23 +193,66 @@ def train_ensemble(X_train, y_train, X_test, y_test):
 
 
 def generate_sample_data(output_path: str, n_samples: int = 1000):
-    """Generate sample training data for demonstration"""
-    logger.info(f"Generating {n_samples} sample training data...")
+    """Generate sample training data with all 40 features"""
+    logger.info(f"Generating {n_samples} sample training data with 40 features...")
     
     np.random.seed(42)
     
-    # Generate synthetic features
+    # Generate all 40 features matching FeatureExtractor
     data = {
+        # Contract Security (8 features)
+        'has_bytecode': np.random.randint(0, 2, n_samples).astype(float),
+        'is_verified': np.random.randint(0, 2, n_samples).astype(float),
+        'has_selfdestruct': np.random.randint(0, 2, n_samples).astype(float),
+        'has_delegatecall': np.random.randint(0, 2, n_samples).astype(float),
+        'is_proxy': np.random.randint(0, 2, n_samples).astype(float),
+        'has_owner': np.random.randint(0, 2, n_samples).astype(float),
+        'is_pausable': np.random.randint(0, 2, n_samples).astype(float),
         'contract_risk_score': np.random.uniform(0, 1, n_samples),
-        'holder_risk_score': np.random.uniform(0, 1, n_samples),
-        'liquidity_risk_score': np.random.uniform(0, 1, n_samples),
-        'transfer_risk_score': np.random.uniform(0, 1, n_samples),
-        'pattern_risk_score': np.random.uniform(0, 1, n_samples),
-        'has_selfdestruct': np.random.randint(0, 2, n_samples),
-        'lp_locked': np.random.randint(0, 2, n_samples),
+        
+        # Holder Analysis (5 features)
         'top_10_concentration': np.random.uniform(0, 1, n_samples),
+        'top_holder_pct': np.random.uniform(0, 1, n_samples),
         'gini_coefficient': np.random.uniform(0.3, 1, n_samples),
+        'unique_holders': np.random.uniform(0, 1, n_samples),
+        'holder_risk_score': np.random.uniform(0, 1, n_samples),
+        
+        # Liquidity Pool (4 features)
+        'lp_locked': np.random.randint(0, 2, n_samples).astype(float),
+        'liquidity_usd': np.random.uniform(0, 1, n_samples),
+        'has_pair': np.random.randint(0, 2, n_samples).astype(float),
+        'liquidity_risk_score': np.random.uniform(0, 1, n_samples),
+        
+        # Transfer Anomaly (7 features)
         'mint_count': np.random.uniform(0, 1, n_samples),
+        'burn_count': np.random.uniform(0, 1, n_samples),
+        'unique_senders': np.random.uniform(0, 1, n_samples),
+        'unique_receivers': np.random.uniform(0, 1, n_samples),
+        'avg_transfer_value': np.random.uniform(0, 1, n_samples),
+        'anomaly_score': np.random.uniform(0, 1, n_samples),
+        'transfer_risk_score': np.random.uniform(0, 1, n_samples),
+        
+        # Pattern Matching (4 features)
+        'is_known_scam': np.random.randint(0, 2, n_samples).astype(float),
+        'honeypot_pattern': np.random.randint(0, 2, n_samples).astype(float),
+        'similarity_score': np.random.uniform(0, 1, n_samples),
+        'pattern_risk_score': np.random.uniform(0, 1, n_samples),
+        
+        # Tokenomics (6 features)
+        'total_supply': np.random.uniform(0, 1, n_samples),
+        'has_tax': np.random.randint(0, 2, n_samples).astype(float),
+        'buy_tax': np.random.uniform(0, 0.5, n_samples),
+        'sell_tax': np.random.uniform(0, 0.5, n_samples),
+        'total_tax': np.random.uniform(0, 0.5, n_samples),
+        'tokenomics_risk_score': np.random.uniform(0, 1, n_samples),
+        
+        # Derived Features (6 features)
+        'risk_score_variance': np.random.uniform(0, 0.5, n_samples),
+        'high_risk_modules': np.random.uniform(0, 1, n_samples),
+        'weighted_risk': np.random.uniform(0, 1, n_samples),
+        'confidence_avg': np.random.uniform(0.5, 1, n_samples),
+        'has_critical_flags': np.random.randint(0, 2, n_samples).astype(float),
+        'liquidity_holder_ratio': np.random.uniform(0, 1, n_samples),
     }
     
     df = pd.DataFrame(data)
@@ -219,7 +262,9 @@ def generate_sample_data(output_path: str, n_samples: int = 1000):
         (df['contract_risk_score'] > 0.7) |
         (df['liquidity_risk_score'] > 0.8) |
         ((df['has_selfdestruct'] == 1) & (df['lp_locked'] == 0)) |
-        (df['top_10_concentration'] > 0.9)
+        (df['top_10_concentration'] > 0.9) |
+        ((df['is_known_scam'] == 1) | (df['honeypot_pattern'] == 1)) |
+        (df['pattern_risk_score'] > 0.8)
     ).astype(int)
     
     # Add some noise
@@ -231,6 +276,7 @@ def generate_sample_data(output_path: str, n_samples: int = 1000):
     df.to_csv(output_path, index=False)
     
     logger.info(f"✅ Sample data saved to {output_path}")
+    logger.info(f"Features: {len(df.columns)-1}, Samples: {len(df)}")
     logger.info(f"Rugpulls: {df['is_rugpull'].sum()}, Safe: {len(df) - df['is_rugpull'].sum()}")
 
 
@@ -246,7 +292,8 @@ def main():
     if args.generate:
         output_path = args.data or 'data/training_data.csv'
         generate_sample_data(output_path, args.samples)
-        return
+        # Continue to training with generated data
+        args.data = output_path
     
     # Load training data
     if not args.data:
