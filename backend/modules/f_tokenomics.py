@@ -157,23 +157,66 @@ async def analyze(address: str, blockchain) -> Dict[str, Any]:
         warnings = []
         risk_score = 0
         
-        # 1. Get basic token info
+        # 1. Get basic token info (with robust fallback strategy)
         total_supply = None
         decimals = None
-        
+        supply_fetch_method = None
+        decimals_fetch_method = None
+
+        # Primary ABI-based calls
         try:
             total_supply = contract.functions.totalSupply().call(timeout=2)
-            logger.info(f"✓ Total supply: {total_supply}")
+            supply_fetch_method = "abi_call"
+            logger.info(f"✓ Total supply (ABI): {total_supply}")
         except Exception as e:
-            logger.debug(f"Could not fetch total supply: {e}")
-            warnings.append("ℹ️ Could not verify total supply")
+            logger.debug(f"ABI totalSupply() failed: {e}")
         
         try:
             decimals = contract.functions.decimals().call(timeout=2)
-            logger.info(f"✓ Decimals: {decimals}")
+            decimals_fetch_method = "abi_call"
+            logger.info(f"✓ Decimals (ABI): {decimals}")
         except Exception as e:
-            logger.debug(f"Could not fetch decimals: {e}")
-            decimals = 18  # Default assumption
+            logger.debug(f"ABI decimals() failed: {e}")
+
+        # Raw eth_call fallback for totalSupply (0x18160ddd) & decimals (0x313ce567)
+        if total_supply is None:
+            try:
+                raw_supply = w3.eth.call({"to": contract_address, "data": "0x18160ddd"})
+                if raw_supply and len(raw_supply) >= 32:
+                    total_supply = int.from_bytes(raw_supply[-32:], byteorder="big")
+                    supply_fetch_method = "raw_call"
+                    logger.info(f"✓ Total supply (raw): {total_supply}")
+            except Exception as e:
+                logger.debug(f"Raw totalSupply eth_call failed: {e}")
+        
+        if decimals is None:
+            try:
+                raw_decimals = w3.eth.call({"to": contract_address, "data": "0x313ce567"})
+                if raw_decimals and len(raw_decimals) >= 32:
+                    decimals = int.from_bytes(raw_decimals[-32:], byteorder="big")
+                    decimals_fetch_method = "raw_call"
+                    logger.info(f"✓ Decimals (raw): {decimals}")
+            except Exception as e:
+                logger.debug(f"Raw decimals eth_call failed: {e}")
+
+        # Final fallbacks
+        if decimals is None:
+            decimals = 18
+            decimals_fetch_method = decimals_fetch_method or "default_assumption"
+            warnings.append("ℹ️ Using default decimals=18 (unverified)")
+
+        if total_supply is None:
+            warnings.append("⚠️ Could not verify total supply (all methods failed)")
+        else:
+            # Normalize supply if decimals known
+            if decimals_fetch_method != "default_assumption" and decimals is not None:
+                # Some tokens already return scaled supply; apply heuristic: if supply < 1e9 assume scaled
+                # Avoid double-scaling
+                if total_supply > 0 and total_supply < 1_000_000_000_000_000_000:  # heuristic threshold
+                    # Accept as raw scaled integer
+                    pass
+                supply_fetch_method = supply_fetch_method or "unknown"
+
         
         # 2. Get bytecode for verification (DISABLED for now - may cause errors)
         bytecode = ""
@@ -260,11 +303,19 @@ async def analyze(address: str, blockchain) -> Dict[str, Any]:
             sell_tax,
             bytecode_checks
         )
+
+        # Penalize confidence additionally if supply could not be verified
+        if total_supply is None:
+            confidence = max(confidence - 10, 0)
+            data_quality = "medium" if confidence >= 50 else "low"
         
         # 8. Initialize data structure
         data = {
             "total_supply": total_supply,
             "decimals": decimals,
+            "total_supply_verified": total_supply is not None,
+            "supply_fetch_method": supply_fetch_method,
+            "decimals_fetch_method": decimals_fetch_method,
             "buy_tax": buy_tax,
             "sell_tax": sell_tax,
             "max_tx_limit_percent": max_tx_limit_percent,
@@ -365,16 +416,28 @@ async def analyze(address: str, blockchain) -> Dict[str, Any]:
         # G) No Tax Functions (Standard ERC20)
         if buy_tax is None and sell_tax is None:
             if not any(bytecode_checks.values()):
-                # This is a standard ERC20 without custom taxes - GOOD!
                 logger.info("✓ Standard ERC20 token (no custom taxes)")
                 data["token_type"] = "standard_erc20"
             else:
-                # Has tax functions in bytecode but couldn't call them - SUSPICIOUS
                 warnings.append("⚠️ Tax functions detected but not accessible - verification needed")
                 risk_score += 10
                 data["token_type"] = "tax_functions_unverified"
         else:
             data["token_type"] = "taxed_token"
+
+        # Supply verification risk
+        if total_supply is None:
+            # Moderate risk: supply opacity can hide mint exploits
+            risk_score += 15
+            warnings.append("⚠️ Supply transparency issue: total supply unavailable")
+        elif total_supply == 0:
+            risk_score += 20
+            warnings.append("🚨 Reported total supply is zero - suspicious")
+
+        # Decimals default assumption risk (light)
+        if decimals_fetch_method == "default_assumption":
+            risk_score += 5
+            warnings.append("ℹ️ Decimals unverified; using 18 by assumption")
         
         # H) Low confidence penalty
         if confidence < 50:

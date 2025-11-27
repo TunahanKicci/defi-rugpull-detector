@@ -354,22 +354,33 @@ async def analyze(address: str, blockchain) -> Dict[str, Any]:
             warnings.append("ℹ️ Using transfer-based balance estimates (RPC unavailable)")
 
         # 6. Calculate metrics
+        
+        # Use verified real balances if available, otherwise use transfer-based estimates
+        holders_for_calculation = verified_holders if real_balances else holder_net_balances
+        
         top_10_sum = sum(h["balance"] for h in top_10_holders)
         
-        # Top 10 ratio
+        # Top 10 ratio - use REAL holders data
         top_10_ratio = 0
         if total_supply and total_supply > 0:
             top_10_ratio = top_10_sum / total_supply
         else:
-            # Relative ratio if no supply
-            total_sample = sum(h["balance"] for h in holder_net_balances)
+            # Relative ratio if no supply - use actual holder balances
+            total_sample = sum(h["balance"] for h in holders_for_calculation[:100])  # Top 100 for better estimate
             if total_sample > 0:
                 top_10_ratio = top_10_sum / total_sample
                 warnings.append("ℹ️ Using sample-based ratio (total supply unavailable)")
                 confidence_score -= 10
 
-        # Gini coefficient
-        all_balances = [h["balance"] for h in holder_net_balances]
+        # Gini coefficient - FIXED: use real holder balances, not transfer estimates
+        # Use only verified balances or top holders for more accurate Gini
+        if real_balances and len(verified_holders) >= 5:
+            all_balances = [h["balance"] for h in verified_holders]
+            confidence_score += 10  # Boost confidence for real data
+        else:
+            # Use top holders only for better accuracy
+            all_balances = [h["balance"] for h in holders_for_calculation[:50]]
+        
         gini_coefficient = calculate_gini(all_balances)
 
         # Sample size for confidence
@@ -417,11 +428,20 @@ async def analyze(address: str, blockchain) -> Dict[str, Any]:
 
         # Data quality
         data["top_10_ratio"] = float(f"{top_10_ratio:.4f}")
+        data["top_10_holders_percentage"] = float(top_10_ratio * 100)  # Add percentage for frontend
         data["gini_coefficient"] = float(f"{gini_coefficient:.4f}")
         data["analyzed_wallet_count"] = sample_size
+        data["total_holders"] = len(unique_addresses)  # Add total unique addresses
         data["total_transfers_analyzed"] = len(all_transfers)
         data["confidence_score"] = confidence_score
-        data["top_holders"] = top_10_holders[:10]
+        data["top_holders"] = [
+            {
+                "address": h["address"],
+                "balance": h["balance"],
+                "percentage": (h["balance"] / total_supply * 100) if total_supply else 0
+            }
+            for h in top_10_holders[:10]
+        ]
         data["data_quality"] = "high" if confidence_score >= 70 else "medium" if confidence_score >= 40 else "low"
 
         features = {
