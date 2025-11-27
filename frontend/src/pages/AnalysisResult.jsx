@@ -2,6 +2,24 @@ import { useState, useEffect } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { AlertTriangle, CheckCircle, XCircle, Loader, Shield, Users, Droplet, TrendingUp, Search, Coins } from 'lucide-react'
 import { analyzeToken } from '../services/analysisService'
+import { 
+  RadarChart, 
+  Radar, 
+  PolarGrid, 
+  PolarAngleAxis, 
+  PolarRadiusAxis,
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
+} from 'recharts'
 
 // Module icons mapping
 const moduleIcons = {
@@ -102,6 +120,70 @@ export default function AnalysisResult() {
     return 'bg-green-900/20 border-green-700'
   }
 
+  // Prepare radar chart data
+  const getRadarData = () => {
+    if (!result?.modules) return []
+    
+    return Object.entries(result.modules).map(([moduleName, moduleData]) => ({
+      module: moduleName.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+      score: 100 - moduleData.risk_score, // Inverted so higher is better
+      risk: moduleData.risk_score
+    }))
+  }
+
+  // Prepare holder distribution data
+  const getHolderDistributionData = () => {
+    const holderData = result?.modules?.holder_analysis?.data
+    if (!holderData) return null
+
+    const top10Percentage = holderData.top_10_holders_percentage || 0
+    const othersPercentage = 100 - top10Percentage
+
+    return [
+      { name: 'Top 10 Holders', value: top10Percentage, color: '#ef4444' },
+      { name: 'Other Holders', value: othersPercentage, color: '#22c55e' }
+    ]
+  }
+
+  // Prepare top holders bar chart data
+  const getTopHoldersData = () => {
+    const holderData = result?.modules?.holder_analysis?.data
+    if (!holderData?.top_holders) return []
+
+    return holderData.top_holders.slice(0, 5).map((holder, idx) => ({
+      name: `Holder ${idx + 1}`,
+      address: holder.address ? `${holder.address.slice(0, 6)}...${holder.address.slice(-4)}` : `#${idx + 1}`,
+      percentage: holder.percentage || 0
+    }))
+  }
+
+  // Custom tooltip for radar chart
+  const CustomRadarTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-slate-800 border border-slate-700 rounded-lg p-3 shadow-xl">
+          <p className="text-white font-semibold">{payload[0].payload.module}</p>
+          <p className="text-green-400">Safety: {payload[0].value.toFixed(1)}</p>
+          <p className="text-red-400">Risk: {payload[0].payload.risk.toFixed(1)}</p>
+        </div>
+      )
+    }
+    return null
+  }
+
+  // Custom tooltip for pie chart
+  const CustomPieTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-slate-800 border border-slate-700 rounded-lg p-3 shadow-xl">
+          <p className="text-white font-semibold">{payload[0].name}</p>
+          <p className="text-primary-400">{payload[0].value.toFixed(2)}%</p>
+        </div>
+      )
+    }
+    return null
+  }
+
   return (
     <div className="relative min-h-screen">
       {/* Animated Background Gradient */}
@@ -121,6 +203,43 @@ export default function AnalysisResult() {
       </div>
 
       <div className="max-w-6xl mx-auto space-y-6 relative z-10">
+      {/* Radar Chart - Most Important */}
+      <div className="card bg-gradient-to-br from-slate-900/90 to-slate-800/90 border-slate-700">
+        <h2 className="text-2xl font-bold mb-6 text-center">Security Overview - Risk Analysis</h2>
+        <ResponsiveContainer width="100%" height={400}>
+          <RadarChart data={getRadarData()}>
+            <PolarGrid stroke="#475569" />
+            <PolarAngleAxis 
+              dataKey="module" 
+              tick={{ fill: '#94a3b8', fontSize: 12 }}
+              stroke="#475569"
+            />
+            <PolarRadiusAxis 
+              angle={90} 
+              domain={[0, 100]}
+              tick={{ fill: '#64748b' }}
+              stroke="#475569"
+            />
+            <Radar 
+              name="Safety Score" 
+              dataKey="score" 
+              stroke="#22c55e" 
+              fill="#22c55e" 
+              fillOpacity={0.6}
+              strokeWidth={2}
+            />
+            <Tooltip content={<CustomRadarTooltip />} />
+            <Legend 
+              wrapperStyle={{ color: '#94a3b8' }}
+              formatter={(value) => <span className="text-slate-300">{value}</span>}
+            />
+          </RadarChart>
+        </ResponsiveContainer>
+        <p className="text-center text-sm text-slate-400 mt-4">
+          Larger area indicates better security. Red zones show high-risk modules.
+        </p>
+      </div>
+
       {/* Risk Score Card */}
       <div className={`card ${getRiskBg(result.risk_score)}`}>
         <div className="text-center">
@@ -178,6 +297,259 @@ export default function AnalysisResult() {
             : score >= 40 
             ? 'from-yellow-900/10 to-yellow-800/5'
             : 'from-green-900/10 to-green-800/5'
+          
+          // Special rendering for holder_analysis with charts
+          if (moduleName === 'holder_analysis') {
+            const holderDistribution = getHolderDistributionData()
+            const topHoldersData = getTopHoldersData()
+            
+            return (
+              <div 
+                key={moduleName} 
+                className={`card bg-gradient-to-br ${bgGradient} border-slate-700/50 hover:border-slate-600 transition-all duration-300 md:col-span-2`}
+              >
+                {/* Header */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    <div className={`p-2 rounded-lg ${score >= 70 ? 'bg-red-500/20' : score >= 40 ? 'bg-yellow-500/20' : 'bg-green-500/20'}`}>
+                      <Icon className={`w-5 h-5 ${getRiskColor(score)}`} />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold capitalize">
+                        {moduleName.replace(/_/g, ' ')}
+                      </h3>
+                      <p className="text-xs text-slate-400">
+                        {moduleDescriptions[moduleName]}
+                      </p>
+                    </div>
+                  </div>
+                  <span className={`text-2xl font-bold ${getRiskColor(score)}`}>
+                    {score.toFixed(0)}
+                  </span>
+                </div>
+
+                {/* Charts Row */}
+                <div className="grid md:grid-cols-2 gap-4 mb-4">
+                  {/* Pie Chart - Holder Distribution */}
+                  {holderDistribution && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-300 mb-2 text-center">
+                        Token Distribution
+                      </h4>
+                      <ResponsiveContainer width="100%" height={200}>
+                        <PieChart>
+                          <Pie
+                            data={holderDistribution}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={({ name, value }) => `${name}: ${value.toFixed(1)}%`}
+                            outerRadius={70}
+                            fill="#8884d8"
+                            dataKey="value"
+                          >
+                            {holderDistribution.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip content={<CustomPieTooltip />} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+
+                  {/* Bar Chart - Top Holders */}
+                  {topHoldersData.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-300 mb-2 text-center">
+                        Top 5 Holders
+                      </h4>
+                      <ResponsiveContainer width="100%" height={200}>
+                        <BarChart 
+                          data={topHoldersData}
+                          layout="horizontal"
+                          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                          <XAxis type="number" stroke="#64748b" tick={{ fill: '#94a3b8', fontSize: 10 }} />
+                          <YAxis 
+                            type="category" 
+                            dataKey="address" 
+                            stroke="#64748b" 
+                            tick={{ fill: '#94a3b8', fontSize: 9 }}
+                            width={70}
+                          />
+                          <Tooltip 
+                            contentStyle={{ 
+                              backgroundColor: '#1e293b', 
+                              border: '1px solid #475569',
+                              borderRadius: '0.5rem',
+                              color: '#e2e8f0'
+                            }}
+                          />
+                          <Bar dataKey="percentage" fill="#3b82f6" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                </div>
+
+                {/* Metrics */}
+                {moduleData.data && (
+                  <div className="grid grid-cols-3 gap-4 mb-4 p-3 bg-slate-800/40 rounded-lg">
+                    <div className="text-center">
+                      <p className="text-xs text-slate-400">Gini Coefficient</p>
+                      <p className="text-lg font-bold text-yellow-400">
+                        {moduleData.data.gini_coefficient?.toFixed(3) || 'N/A'}
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs text-slate-400">Total Holders</p>
+                      <p className="text-lg font-bold text-blue-400">
+                        {moduleData.data.total_holders || 'N/A'}
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs text-slate-400">Top 10 Holdings</p>
+                      <p className="text-lg font-bold text-red-400">
+                        {moduleData.data.top_10_holders_percentage?.toFixed(1) || 'N/A'}%
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Warnings */}
+                {moduleData.warnings && moduleData.warnings.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-slate-300">Key Findings:</p>
+                    <ul className="space-y-1.5">
+                      {moduleData.warnings.map((warning, idx) => (
+                        <li key={idx} className="flex items-start space-x-2 text-xs text-slate-400">
+                          <span className="text-slate-500">•</span>
+                          <span>{warning}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )
+          }
+
+          // Special rendering for liquidity_pool with visualization
+          if (moduleName === 'liquidity_pool') {
+            const liquidityData = moduleData.data
+            const liquidityMetrics = liquidityData ? [
+              { name: 'Liquidity', value: parseFloat(liquidityData.liquidity_usd) || 0, color: '#3b82f6' },
+              { name: 'Volume 24h', value: parseFloat(liquidityData.volume_24h) || 0, color: '#8b5cf6' },
+            ].filter(m => m.value > 0) : []
+
+            return (
+              <div 
+                key={moduleName} 
+                className={`card bg-gradient-to-br ${bgGradient} border-slate-700/50 hover:border-slate-600 transition-all duration-300 md:col-span-2`}
+              >
+                {/* Header */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    <div className={`p-2 rounded-lg ${score >= 70 ? 'bg-red-500/20' : score >= 40 ? 'bg-yellow-500/20' : 'bg-green-500/20'}`}>
+                      <Icon className={`w-5 h-5 ${getRiskColor(score)}`} />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold capitalize">
+                        {moduleName.replace(/_/g, ' ')}
+                      </h3>
+                      <p className="text-xs text-slate-400">
+                        {moduleDescriptions[moduleName]}
+                      </p>
+                    </div>
+                  </div>
+                  <span className={`text-2xl font-bold ${getRiskColor(score)}`}>
+                    {score.toFixed(0)}
+                  </span>
+                </div>
+
+                {/* Liquidity Bar Chart */}
+                {liquidityMetrics.length > 0 && (
+                  <div className="mb-4">
+                    <h4 className="text-sm font-semibold text-slate-300 mb-2 text-center">
+                      Liquidity Metrics
+                    </h4>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <BarChart data={liquidityMetrics}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                        <XAxis dataKey="name" stroke="#64748b" tick={{ fill: '#94a3b8' }} />
+                        <YAxis 
+                          stroke="#64748b" 
+                          tick={{ fill: '#94a3b8' }}
+                          tickFormatter={(value) => `$${(value / 1000).toFixed(0)}K`}
+                        />
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: '#1e293b', 
+                            border: '1px solid #475569',
+                            borderRadius: '0.5rem',
+                            color: '#e2e8f0'
+                          }}
+                          formatter={(value) => [`$${value.toLocaleString()}`, 'Value']}
+                        />
+                        <Bar dataKey="value" fill="#3b82f6">
+                          {liquidityMetrics.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+
+                {/* Liquidity Metrics */}
+                {liquidityData && (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 p-3 bg-slate-800/40 rounded-lg">
+                    <div className="text-center">
+                      <p className="text-xs text-slate-400">Liquidity USD</p>
+                      <p className="text-sm font-bold text-blue-400">
+                        ${parseFloat(liquidityData.liquidity_usd || 0).toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs text-slate-400">Lock Status</p>
+                      <p className={`text-sm font-bold ${liquidityData.is_locked ? 'text-green-400' : 'text-red-400'}`}>
+                        {liquidityData.is_locked ? 'Locked' : 'Unlocked'}
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs text-slate-400">Price USD</p>
+                      <p className="text-sm font-bold text-purple-400">
+                        ${parseFloat(liquidityData.price_usd || 0).toFixed(6)}
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs text-slate-400">Market Cap</p>
+                      <p className="text-sm font-bold text-yellow-400">
+                        ${parseFloat(liquidityData.market_cap || 0).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Warnings */}
+                {moduleData.warnings && moduleData.warnings.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-slate-300">Key Findings:</p>
+                    <ul className="space-y-1.5">
+                      {moduleData.warnings.map((warning, idx) => (
+                        <li key={idx} className="flex items-start space-x-2 text-xs text-slate-400">
+                          <span className="text-slate-500">•</span>
+                          <span>{warning}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )
+          }
           
           return (
             <div 
