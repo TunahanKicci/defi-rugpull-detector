@@ -15,10 +15,29 @@ logger = logging.getLogger(__name__)
 TRANSFER_EVENT_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
+# Whitelisted tokens (known legitimate tokens with expected patterns)
+WHITELISTED_TOKENS = {
+    "0xdac17f958d2ee523a2206206994597c13d831ec7",  # USDT
+    "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",  # USDC
+    "0x6b175474e89094c44da98b954eedeac495271d0f",  # DAI
+    "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",  # stETH - Lido Staked Ether (rebase token)
+    "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",  # WETH
+    "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",  # WBTC
+    "0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0",  # MATIC
+    "0x514910771af9ca656af840dff83e8264ecf986ca",  # LINK
+}
+
+# Known rebase/liquid staking tokens (minting is expected)
+REBASE_TOKENS = {
+    "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",  # stETH
+    "0x9559aaa82d9649c7a7b220e7c461d2e74c9a3593",  # rETH - Rocket Pool
+    "0xac3e018457b222d93114458476f3e3416abbe38f",  # sfrxETH
+}
+
 async def analyze(address: str, blockchain) -> Dict[str, Any]:
     """
     Transfer modellerini analiz eder. 
-    GÜNCELLEME: Düşük aktivite artık risk puanını artırıyor.
+    GÜNCELLEME: Whitelist ve rebase token desteği eklendi.
     """
     try:
         logger.info(f"Starting Transfer Anomaly Analysis for {address}...")
@@ -30,6 +49,10 @@ async def analyze(address: str, blockchain) -> Dict[str, Any]:
 
         w3 = blockchain.w3
         checksum_address = w3.to_checksum_address(address)
+        
+        # Check if token is whitelisted or rebase token
+        is_whitelisted = address.lower() in WHITELISTED_TOKENS
+        is_rebase_token = address.lower() in REBASE_TOKENS
 
         # 2. Toplam Arzı Al
         total_supply = 1_000_000_000
@@ -112,7 +135,7 @@ async def analyze(address: str, blockchain) -> Dict[str, Any]:
             except Exception:
                 continue
 
-        # 5. ML Anomali Tespiti
+        # 5. ML Anomali Tespiti (context-aware)
         anomaly_score_ml = 0.0
         outliers_count = 0
         
@@ -123,35 +146,67 @@ async def analyze(address: str, blockchain) -> Dict[str, Any]:
                 clf = IsolationForest(random_state=42, contamination='auto')
                 preds = clf.fit_predict(X)
                 outliers_count = list(preds).count(-1)
-                # ML skoru
+                # ML skoru - whitelisted için normalize et
                 anomaly_score_ml = min((outliers_count / len(transfers)) * 3, 1.0)
+                
+                # Whitelisted tokens için daha tolerant threshold
+                if is_whitelisted and anomaly_score_ml < 0.85:
+                    logger.info(f"Whitelisted token - anomaly score {anomaly_score_ml:.2f} is expected")
+                    anomaly_score_ml = max(0, anomaly_score_ml - 0.3)  # Reduce false positives
             except Exception:
                 pass
         
-        # 6. Risk Hesaplama (GÜNCELLENEN KISIM)
+        # 6. Risk Hesaplama (CONTEXT-AWARE)
         
         # A) Hareketsizlik Cezası
         if total_transfers == 0:
-            warnings.append("⚠️ No activity in the last 2000 blocks (Dead or Locked)")
-            risk_score += 35  # Hiç hareket yoksa orta risk
-        elif total_transfers < 10:
+            warnings.append("⚠️ No activity in the last 100 blocks")
+            risk_score += 25 if not is_whitelisted else 0  # Whitelisted tokens can be inactive
+        elif total_transfers < 10 and not is_whitelisted:
             warnings.append(f"ℹ️ Very low activity ({total_transfers} txs)")
-            risk_score += 15  # Çok az hareket varsa düşük-orta risk
+            risk_score += 10
         
-        # B) Mint Riski
+        # B) Mint Riski (CONTEXT-AWARE)
         if mint_count > 0:
-            warnings.append(f"🚨 {mint_count} mint events detected (Supply Inflation)")
-            risk_score += 40
+            if is_rebase_token:
+                # Rebase tokens (stETH, rETH) mint regularly - this is NORMAL
+                logger.info(f"Rebase token - {mint_count} mint events are expected (staking rewards)")
+                if mint_count > 50:  # Only warn if excessive
+                    warnings.append(f"ℹ️ {mint_count} mint events (normal for staking token)")
+            else:
+                # Non-rebase tokens - minting is suspicious
+                if mint_count > 20:
+                    warnings.append(f"🚨 {mint_count} mint events detected (Supply Inflation Risk)")
+                    risk_score += 40
+                elif mint_count > 5:
+                    warnings.append(f"⚠️ {mint_count} mint events detected")
+                    risk_score += 25
+                else:
+                    warnings.append(f"⚡ {mint_count} mint events detected")
+                    risk_score += 10
 
-        # C) Whale Riski
+        # C) Whale Riski (CONTEXT-AWARE)
         if large_transfers > 0:
-            warnings.append(f"⚠️ {large_transfers} whale transfers detected")
-            risk_score += 15 + (large_transfers * 2)
+            if is_whitelisted:
+                # Whitelisted tokens have institutional flows - less risky
+                if large_transfers > 10:
+                    warnings.append(f"ℹ️ {large_transfers} large transfers (institutional activity)")
+                    risk_score += 5
+            else:
+                # Unknown tokens - whale activity is more suspicious
+                warnings.append(f"⚠️ {large_transfers} whale transfers detected")
+                risk_score += 10 + min(large_transfers * 2, 20)
 
-        # D) ML Anomali Riski
-        if anomaly_score_ml > 0.5:
-            warnings.append(f"🤖 Unusual transfer patterns detected (Score: {anomaly_score_ml:.2f})")
-            risk_score += 25
+        # D) ML Anomali Riski (CONTEXT-AWARE)
+        if anomaly_score_ml > 0.7:
+            if is_whitelisted:
+                # Whitelisted tokens - unusual patterns less concerning
+                warnings.append(f"ℹ️ Varied transfer patterns (Score: {anomaly_score_ml:.2f})")
+                risk_score += 5
+            else:
+                # Unknown tokens - unusual patterns are red flags
+                warnings.append(f"🤖 Unusual transfer patterns detected (Score: {anomaly_score_ml:.2f})")
+                risk_score += 25
 
         return {
             "risk_score": min(risk_score, 100),

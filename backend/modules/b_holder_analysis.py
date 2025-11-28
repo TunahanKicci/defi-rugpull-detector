@@ -22,6 +22,18 @@ SYSTEM_ADDRESSES = {
     "0xdead000000000000000042069420694206942069",  # Another burn
 }
 
+# Whitelisted tokens - known legitimate tokens with expected distribution
+WHITELISTED_TOKENS = {
+    "0xdac17f958d2ee523a2206206994597c13d831ec7": "USDT",
+    "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48": "USDC",
+    "0x6b175474e89094c44da98b954eedeac495271d0f": "DAI",
+    "0xae7ab96520de3a18e5e111b5eaab095312d7fe84": "stETH",  # Lido - rebase token
+    "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2": "WETH",
+    "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599": "WBTC",
+    "0x514910771af9ca656af840dff83e8264ecf986ca": "LINK",
+    "0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0": "MATIC",
+}
+
 
 def calculate_gini(balances: List[float]) -> float:
     """
@@ -208,6 +220,10 @@ async def analyze(address: str, blockchain) -> Dict[str, Any]:
         
         w3 = blockchain.w3
         checksum_address = w3.to_checksum_address(address)
+        
+        # Check if whitelisted (major tokens get special treatment)
+        is_whitelisted = address.lower() in WHITELISTED_TOKENS
+        token_name = WHITELISTED_TOKENS.get(address.lower(), "Unknown")
 
         # 1. Get token metadata
         contract = w3.eth.contract(address=checksum_address, abi=[
@@ -236,39 +252,77 @@ async def analyze(address: str, blockchain) -> Dict[str, Any]:
             offset_per_page=1000
         )
         
-        # Minimum threshold check
+        # Minimum threshold check (with whitelist awareness)
         if len(all_transfers) < 10:
             logger.warning(f"Insufficient transfer data ({len(all_transfers)} transfers)")
             
-            # Scaled risk based on activity level
-            # 0 transfers = 20 risk (dead project)
-            # 1-3 transfers = 10 risk (very low activity)
-            # 4-9 transfers = 5 risk (low but some activity)
+            # Whitelisted tokens (stETH, USDC, etc) get special treatment
+            if is_whitelisted:
+                logger.info(f"Whitelisted token ({token_name}) - low activity is acceptable")
+                return {
+                    "risk_score": 0,  # No risk for known legitimate tokens
+                    "confidence": 50,
+                    "warnings": [
+                        f"ℹ️ {token_name} is a known legitimate token",
+                        f"ℹ️ Limited transfer data ({len(all_transfers)} transfers)",
+                        "ℹ️ May be primarily CEX-traded or in low volatility period"
+                    ],
+                    "data": {
+                        "token_name": token_name,
+                        "analyzed_wallet_count": 0,
+                        "total_transfers_analyzed": len(all_transfers),
+                        "data_quality": "whitelisted_insufficient",
+                        "total_supply": total_supply,
+                        "gini_coefficient": None,
+                        "top_10_holders_percentage": None,
+                        "total_holders": None
+                    },
+                    "features": {
+                        "activity_level": 1.0,  # Assume healthy for whitelisted
+                        "top_10_ratio": 0.0,
+                        "gini_coefficient": 0.0,
+                        "holder_count_proxy": 1.0,
+                        "confidence": 0.5
+                    }
+                }
+            
+            # NON-WHITELISTED: Much higher risk for dead/abandoned tokens
             if len(all_transfers) == 0:
-                activity_risk = 20
-                activity_msg = "⚠️ No recent on-chain activity detected"
+                activity_risk = 60  # Increased from 20 - DEAD TOKEN
+                activity_msg = "🚨 CRITICAL: Zero on-chain activity - likely DEAD or ABANDONED"
+                activity_confidence = 5
             elif len(all_transfers) <= 3:
-                activity_risk = 10
-                activity_msg = "⚡ Very low on-chain activity (may be CEX-traded)"
+                activity_risk = 40  # Increased from 10 - Very suspicious
+                activity_msg = "🚨 Extremely low activity - potential dead project"
+                activity_confidence = 10
             else:
-                activity_risk = 5
-                activity_msg = "ℹ️ Low on-chain activity (insufficient for holder analysis)"
+                activity_risk = 20  # 4-9 transfers - still concerning
+                activity_msg = "⚠️ Very low activity - insufficient for analysis"
+                activity_confidence = 15
             
             return {
                 "risk_score": activity_risk,
-                "confidence": 10,
+                "confidence": activity_confidence,
                 "warnings": [
-                    "⚠️ Insufficient transfer data for holder analysis",
-                    f"ℹ️ Only {len(all_transfers)} recent transfers found",
-                    activity_msg
+                    "🚨 Insufficient transfer data for holder analysis",
+                    f"⚠️ Only {len(all_transfers)} recent transfers in last ~1 day",
+                    activity_msg,
+                    "⚠️ Unable to verify holder distribution"
                 ],
                 "data": {
                     "analyzed_wallet_count": 0,
                     "total_transfers_analyzed": len(all_transfers),
-                    "data_quality": "insufficient"
+                    "data_quality": "critical_insufficient",
+                    "gini_coefficient": None,
+                    "top_10_holders_percentage": None,
+                    "total_holders": None
                 },
                 "features": {
-                    "activity_level": len(all_transfers) / 100  # Normalized activity score
+                    "activity_level": len(all_transfers) / 100,  # Normalized activity score
+                    "top_10_ratio": 0.0,
+                    "gini_coefficient": 0.0,
+                    "holder_count_proxy": 0.0,  # No data = worst case
+                    "confidence": activity_confidence / 100
                 }
             }
 
