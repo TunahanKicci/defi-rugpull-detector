@@ -8,6 +8,18 @@ from web3 import Web3
 
 logger = logging.getLogger(__name__)
 
+# Whitelisted tokens (major stablecoins and wrapped tokens - don't need lock warnings)
+WHITELISTED_TOKENS = {
+    "0xdac17f958d2ee523a2206206994597c13d831ec7",  # USDT
+    "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",  # USDC
+    "0x6b175474e89094c44da98b954eedeac495271d0f",  # DAI
+    "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",  # WBTC
+    "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",  # WETH
+    "0x4fabb145d64652a948d72533023f6e7a623c7c53",  # BUSD
+    "0x514910771af9ca656af840dff83e8264ecf986ca",  # LINK
+    "0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0",  # MATIC
+}
+
 # Chainlink Price Feed ABI (ETH/USD)
 CHAINLINK_PRICE_FEED_ABI = [
     {
@@ -198,7 +210,7 @@ async def analyze_liquidity_pool(pair_address: str, token_address: str, blockcha
         blockchain: Blockchain client instance
         
     Returns:
-        Liquidity data
+        Liquidity data with price, market cap, volume
     """
     try:
         if not pair_address:
@@ -219,32 +231,79 @@ async def analyze_liquidity_pool(pair_address: str, token_address: str, blockcha
         token0 = pair_contract.functions.token0().call()
         token1 = pair_contract.functions.token1().call()
         
+        # Get token decimals
+        token_contract = w3.eth.contract(
+            address=Web3.to_checksum_address(token_address),
+            abi=[{
+                "constant": True,
+                "inputs": [],
+                "name": "decimals",
+                "outputs": [{"name": "", "type": "uint8"}],
+                "type": "function"
+            }, {
+                "constant": True,
+                "inputs": [],
+                "name": "totalSupply",
+                "outputs": [{"name": "", "type": "uint256"}],
+                "type": "function"
+            }]
+        )
+        
+        try:
+            token_decimals = token_contract.functions.decimals().call()
+        except:
+            token_decimals = 18
+            
+        try:
+            total_supply_raw = token_contract.functions.totalSupply().call()
+            total_supply = total_supply_raw / (10 ** token_decimals)
+        except:
+            total_supply = None
+        
         # Determine which reserve is our token
         token_address_checksum = Web3.to_checksum_address(token_address)
         if token0.lower() == token_address.lower():
-            token_reserve = reserve0
-            paired_reserve = reserve1
+            token_reserve = reserve0 / (10 ** token_decimals)
+            paired_reserve = reserve1 / 1e18  # Assuming WETH/WBNB is 18 decimals
         else:
-            token_reserve = reserve1
-            paired_reserve = reserve0
+            token_reserve = reserve1 / (10 ** token_decimals)
+            paired_reserve = reserve0 / 1e18
         
-        # Convert from wei
-        token_liquidity = token_reserve / 1e18
-        paired_liquidity = paired_reserve / 1e18
-        
-        logger.info(f"Liquidity: {token_liquidity:.2f} token, {paired_liquidity:.4f} paired")
+        logger.info(f"Liquidity: {token_reserve:.2f} token, {paired_reserve:.4f} paired")
         
         # Get real-time price from Chainlink
         paired_token_price = await get_eth_price(blockchain)
-        total_liquidity_usd = paired_liquidity * paired_token_price * 2
+        
+        # Calculate price and liquidity
+        if token_reserve > 0:
+            price_in_paired = paired_reserve / token_reserve
+            price_usd = price_in_paired * paired_token_price
+        else:
+            price_in_paired = 0
+            price_usd = 0
+        
+        # Total liquidity (both sides)
+        total_liquidity_usd = paired_reserve * paired_token_price * 2
+        
+        # Market cap calculation
+        if total_supply and price_usd:
+            market_cap = total_supply * price_usd
+        else:
+            market_cap = 0
         
         logger.info(f"Total liquidity: ${total_liquidity_usd:,.0f} (paired token @ ${paired_token_price:.2f})")
+        logger.info(f"Token price: ${price_usd:.8f}, Market cap: ${market_cap:,.0f}")
         
         return {
-            "token_liquidity": token_liquidity,
-            "paired_liquidity": paired_liquidity,
-            "total_liquidity_usd": total_liquidity_usd,
-            "pair_address": pair_address
+            "token_liquidity": float(token_reserve),
+            "paired_liquidity": float(paired_reserve),
+            "total_liquidity_usd": float(total_liquidity_usd),
+            "price_usd": float(price_usd),
+            "price_in_paired": float(price_in_paired),
+            "market_cap": float(market_cap),
+            "total_supply": float(total_supply) if total_supply else None,
+            "pair_address": pair_address,
+            "paired_token_price": float(paired_token_price)
         }
         
     except Exception as e:
@@ -258,8 +317,9 @@ async def analyze(address: str, blockchain) -> Dict[str, Any]:
     
     Checks:
     - Total liquidity locked
+    - Token price and market cap
     - LP token holder concentration
-    - Liquidity lock duration
+    - Liquidity lock duration (placeholder)
     - Rug pull via liquidity removal risk
     
     Args:
@@ -275,6 +335,9 @@ async def analyze(address: str, blockchain) -> Dict[str, Any]:
         data = {}
         features = {}
         
+        # Check if token is whitelisted (major tokens)
+        is_whitelisted = address.lower() in WHITELISTED_TOKENS
+        
         # Try to find and analyze DEX pair
         pair_address = await get_pair_address(address, blockchain)
         
@@ -283,13 +346,29 @@ async def analyze(address: str, blockchain) -> Dict[str, Any]:
             
             if "error" not in liquidity_data:
                 total_liquidity = liquidity_data.get("total_liquidity_usd", 0)
-                data["total_liquidity_usd"] = total_liquidity
-                data["pair_address"] = liquidity_data.get("pair_address")
-                data["is_locked"] = False  # Would need to check lock contracts
-                data["lock_duration_days"] = 0
+                price_usd = liquidity_data.get("price_usd", 0)
+                market_cap = liquidity_data.get("market_cap", 0)
                 
-                # Analyze liquidity amount
-                if total_liquidity < 10000:
+                # Populate data with actual values
+                data["liquidity_usd"] = total_liquidity
+                data["price_usd"] = price_usd
+                data["market_cap"] = market_cap
+                data["pair_address"] = liquidity_data.get("pair_address")
+                data["token_reserve"] = liquidity_data.get("token_liquidity", 0)
+                data["paired_reserve"] = liquidity_data.get("paired_liquidity", 0)
+                data["paired_token_price"] = liquidity_data.get("paired_token_price", 0)
+                
+                # Lock status (would need lock contract integration)
+                # Placeholder: Check common lock contracts like Unicrypt, Team Finance, etc.
+                data["is_locked"] = False  # TODO: Implement lock detection
+                data["lock_duration_days"] = 0
+                data["volume_24h"] = 0  # TODO: Would need to query DEX API or track Transfer events
+                
+                # Risk assessment based on liquidity
+                if total_liquidity < 5000:
+                    warnings.append("🚨 CRITICAL: Extremely low liquidity (<$5k) - HIGH RUG RISK")
+                    risk_score += 50
+                elif total_liquidity < 10000:
                     warnings.append("🚨 CRITICAL: Very low liquidity (<$10k)")
                     risk_score += 40
                 elif total_liquidity < 50000:
@@ -301,36 +380,79 @@ async def analyze(address: str, blockchain) -> Dict[str, Any]:
                 else:
                     logger.info(f"Good liquidity: ${total_liquidity:,.0f}")
                 
+                # Price validation
+                if price_usd <= 0:
+                    warnings.append("⚠️ Token price could not be determined")
+                    risk_score += 15
+                elif price_usd < 0.000000001:
+                    warnings.append("ℹ️ Extremely low token price (micro-cap)")
+                
+                # Market cap validation
+                if market_cap > 0:
+                    if market_cap < 10000:
+                        warnings.append("⚠️ Very small market cap (<$10k)")
+                        risk_score += 10
+                    elif market_cap > 10000000000 and not is_whitelisted:
+                        # Only warn for non-whitelisted tokens with >$10B market cap
+                        warnings.append("⚠️ Unusually high market cap - verify supply")
+                    elif is_whitelisted and market_cap > 1000000000000:
+                        # Even whitelisted: sanity check for >$1T
+                        warnings.append("ℹ️ Major token with large market cap")
+                
                 features["liquidity_usd"] = min(total_liquidity / 1000000, 1.0)
-                features["is_locked"] = 0.0  # Not locked
+                features["price_usd"] = min(price_usd * 1000000, 1.0)  # Normalize
+                features["market_cap"] = min(market_cap / 100000000, 1.0)
+                features["is_locked"] = 0.0
             else:
                 warnings.append("⚠️ Could not fetch liquidity data")
-                data["total_liquidity_usd"] = 50000  # Conservative estimate
-                risk_score += 20
+                data["liquidity_usd"] = 0
+                data["price_usd"] = 0
+                data["market_cap"] = 0
+                data["is_locked"] = False
+                data["lock_duration_days"] = 0
+                data["volume_24h"] = 0
+                risk_score += 30
+                
+                features["liquidity_usd"] = 0
+                features["is_locked"] = 0.0
         else:
-            # No pair found
+            # No pair found - very high risk
             logger.info(f"No DEX pair found for {address}")
-            warnings.append("⚠️ No DEX liquidity pool detected")
+            warnings.append("🚨 No DEX liquidity pool detected - CRITICAL")
             
-            total_liquidity = 50000  # Conservative estimate
-            is_locked = False
-            lock_days = 0
-            
-            data["total_liquidity_usd"] = total_liquidity
-            data["is_locked"] = is_locked
-            data["lock_duration_days"] = lock_days
+            data["liquidity_usd"] = 0
+            data["price_usd"] = 0
+            data["market_cap"] = 0
+            data["is_locked"] = False
+            data["lock_duration_days"] = 0
             data["pair_address"] = None
+            data["volume_24h"] = 0
             
-            warnings.append("🚨 No DEX pair found - high risk")
-            risk_score += 35
+            risk_score += 55
             
-            features["liquidity_usd"] = 0.05
+            features["liquidity_usd"] = 0
             features["is_locked"] = 0.0
         
-        # Check lock status (placeholder - would need lock contract integration)
-        if not data.get("is_locked", False):
-            warnings.append("⚠️ Liquidity not locked - withdrawal risk")
-            risk_score += 20
+        # Lock status penalty (smart evaluation)
+        is_whitelisted = address.lower() in WHITELISTED_TOKENS
+        is_locked = data.get("is_locked", False)
+        
+        if not is_locked:
+            if is_whitelisted:
+                # Whitelisted tokens don't need lock warnings
+                logger.info(f"Whitelisted token - skipping lock requirement")
+            elif total_liquidity > 1000000:
+                # High liquidity (>$1M) - lock is less critical
+                warnings.append("ℹ️ Liquidity not locked (but high liquidity reduces risk)")
+                risk_score += 5
+            elif total_liquidity > 500000:
+                # Medium-high liquidity ($500k-$1M)
+                warnings.append("⚡ Liquidity not locked - moderate withdrawal risk")
+                risk_score += 10
+            else:
+                # Low liquidity - lock is critical
+                warnings.append("⚠️ Liquidity not locked - HIGH withdrawal risk")
+                risk_score += 20
         
         risk_score = min(risk_score, 100)
         
@@ -338,6 +460,7 @@ async def analyze(address: str, blockchain) -> Dict[str, Any]:
         
         return {
             "risk_score": risk_score,
+            "confidence": 80,  # Add confidence score
             "warnings": warnings,
             "data": data,
             "features": features
@@ -346,8 +469,19 @@ async def analyze(address: str, blockchain) -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"Liquidity analysis failed: {str(e)}")
         return {
-            "risk_score": 50,
-            "warnings": [f"Analysis error: {str(e)}"],
-            "data": {},
-            "features": {}
+            "risk_score": 60,
+            "confidence": 0,
+            "warnings": [f"⚠️ Analysis error: {str(e)}"],
+            "data": {
+                "liquidity_usd": 0,
+                "price_usd": 0,
+                "market_cap": 0,
+                "is_locked": False,
+                "lock_duration_days": 0,
+                "volume_24h": 0
+            },
+            "features": {
+                "liquidity_usd": 0,
+                "is_locked": 0.0
+            }
         }
