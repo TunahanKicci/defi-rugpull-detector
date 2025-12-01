@@ -21,9 +21,24 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
     
     # Blockchain RPC Endpoints
-    ETHEREUM_RPC: str = "https://eth.llamarpc.com"
+    # Primary RPCs (can be overridden via .env)
+    ETHEREUM_RPC: str = "https://cloudflare-eth.com"
     BSC_RPC: str = "https://bsc-dataseed.binance.org"
     POLYGON_RPC: str = "https://polygon-rpc.com"
+
+    # Comma-separated fallback RPCs for resiliency (tried in order)
+    ETHEREUM_RPC_FALLBACKS: str = (
+        "https://rpc.ankr.com/eth,https://eth.llamarpc.com"
+    )
+    BSC_RPC_FALLBACKS: str = (
+        "https://rpc.ankr.com/bsc,https://bsc.publicnode.com"
+    )
+    POLYGON_RPC_FALLBACKS: str = (
+        "https://rpc.ankr.com/polygon,https://polygon-bor-rpc.publicnode.com"
+    )
+
+    # RPC request timeout (seconds)
+    RPC_REQUEST_TIMEOUT: int = 5
     
     # WebSocket RPC
     ETHEREUM_WSS: str = ""
