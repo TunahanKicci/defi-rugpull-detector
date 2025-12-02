@@ -17,9 +17,11 @@ KNOWN_SCAMS = set()
 SCAM_BYTECODE_DB = []  # List of {address, bytecode_hash, opcodes, functions}
 
 
-def detect_dangerous_opcode_patterns(bytecode: str) -> Dict[str, Any]:
+def analyze_bytecode_characteristics(bytecode: str) -> Dict[str, Any]:
     """
-    Detect dangerous opcode patterns commonly used in scams
+    Analyze basic bytecode characteristics (size, complexity)
+    Note: Opcode pattern matching removed due to high false positive rate.
+    We rely on function selectors and bytecode size heuristics instead.
     
     Args:
         bytecode: Contract bytecode
@@ -30,55 +32,34 @@ def detect_dangerous_opcode_patterns(bytecode: str) -> Dict[str, Any]:
     if not bytecode or bytecode == "0x":
         return {"patterns": [], "risk": 0}
     
-    bytecode_lower = bytecode.lower()
     detected_patterns = []
     risk_score = 0
     
-    # Pattern 1: Hidden Mint - DELEGATECALL to mint function
-    if "delegatecall" in bytecode_lower and "40c10f19" in bytecode_lower:  # mint selector
-        detected_patterns.append({
-            "name": "hidden_mint",
-            "description": "Contract may have hidden mint capability via delegatecall",
-            "risk": 30
-        })
-        risk_score += 30
+    # Bytecode size analysis - main indicator
+    bytecode_size = len(bytecode)
     
-    # Pattern 2: Transfer Restriction - tx.origin check (honeypot indicator)
-    if "32" in bytecode_lower and "14" in bytecode_lower:  # ORIGIN (0x32) and EQ (0x14)
+    if bytecode_size < 2000:  # Very small - likely minimal/proxy/scam contract
         detected_patterns.append({
-            "name": "origin_check",
-            "description": "Uses tx.origin check - potential honeypot",
+            "name": "minimal_bytecode",
+            "description": f"Very small bytecode ({bytecode_size} bytes) - minimal implementation",
+            "risk": 40
+        })
+        risk_score += 40
+    elif bytecode_size < 4000:  # Small but might be legitimate minimal token
+        detected_patterns.append({
+            "name": "small_bytecode",
+            "description": f"Small bytecode ({bytecode_size} bytes) - limited functionality",
             "risk": 25
         })
         risk_score += 25
-    
-    # Pattern 3: Blacklist mechanism without visibility
-    if "f9f92be4" in bytecode_lower or "blacklist" in bytecode_lower:  # blacklist selector
+    elif bytecode_size > 60000:  # Extremely large - might be obfuscated
         detected_patterns.append({
-            "name": "blacklist",
-            "description": "Has blacklist function - users can be blocked from trading",
-            "risk": 15
-        })
-        risk_score += 15
-    
-    # Pattern 4: Max TX limit bypass for owner
-    if ("caller" in bytecode_lower or "33" in bytecode_lower) and ("owner" in bytecode_lower):
-        # Check if there's owner bypass logic
-        detected_patterns.append({
-            "name": "owner_bypass",
-            "description": "Owner may have special privileges bypassing limits",
+            "name": "large_bytecode",
+            "description": f"Very large bytecode ({bytecode_size//1000}KB) - complex contract",
             "risk": 10
         })
         risk_score += 10
-    
-    # Pattern 5: Suspicious SELFDESTRUCT without timelock
-    if "selfdestruct" in bytecode_lower or "ff" in bytecode_lower[-100:]:  # SELFDESTRUCT opcode
-        detected_patterns.append({
-            "name": "selfdestruct",
-            "description": "Contract can be destroyed - funds may be lost",
-            "risk": 20
-        })
-        risk_score += 20
+    # Normal size (4000-60000): no penalty
     
     return {
         "patterns": detected_patterns,
@@ -286,18 +267,19 @@ async def analyze(address: str, blockchain) -> Dict[str, Any]:
         contract_selectors = extract_function_selectors(bytecode)
         data["function_count"] = len(contract_selectors)
         
-        # Detect dangerous opcode patterns (real scam detection!)
-        opcode_analysis = detect_dangerous_opcode_patterns(bytecode)
-        data["dangerous_patterns"] = opcode_analysis["patterns"]
-        risk_score += opcode_analysis["risk"]
+        # Analyze bytecode characteristics (size-based heuristics)
+        bytecode_analysis = analyze_bytecode_characteristics(bytecode)
+        data["bytecode_patterns"] = bytecode_analysis["patterns"]
+        risk_score += bytecode_analysis["risk"]
         
-        # Add warnings for detected dangerous patterns
-        for pattern in opcode_analysis["patterns"]:
-            if pattern["risk"] >= 25:
-                warnings.append(f"🚨 {pattern['description']}")
-            elif pattern["risk"] >= 15:
+        logger.info(f"Bytecode analysis for {address}: {len(bytecode_analysis['patterns'])} patterns, base risk={bytecode_analysis['risk']}")
+        
+        # Add warnings for bytecode issues
+        for pattern in bytecode_analysis["patterns"]:
+            logger.info(f"  Pattern: {pattern['name']} (risk={pattern['risk']})")
+            if pattern["risk"] >= 30:
                 warnings.append(f"⚠️ {pattern['description']}")
-            else:
+            elif pattern["risk"] >= 10:
                 warnings.append(f"⚡ {pattern['description']}")
         
         # Compare with known scam bytecodes
@@ -343,29 +325,63 @@ async def analyze(address: str, blockchain) -> Dict[str, Any]:
             risk_score += 25
         
         
-        # Check for common honeypot/scam patterns in bytecode
-        honeypot_patterns = {
-            "bait": 5,
-            "trap": 10,
-            "lock": 3,
-            "antibot": 2,
-            "honeypot": 15
+        # Check for known function selectors - both risky and positive indicators
+        function_selectors = {
+            # High-risk functions
+            "f9f92be4": ("addToBlackList", 30),  # Blacklist function - very risky
+            "e47d6060": ("setMaxTxPercent", 20),  # Can restrict trades
+            
+            # Medium-risk functions
+            "40c10f19": ("mint", 15),  # Mint function (common in tokens)
+            "42966c68": ("burn", 5),  # Burn function (less risky)
+            "f2fde38b": ("transferOwnership", 10),  # Owner transfer
+            
+            # Positive security indicators (reduce risk)
+            "715018a6": ("renounceOwnership", -25),  # EXCELLENT: owner gave up control
+            "dd62ed3e": ("allowance", -3),  # Standard ERC20 function
+            "a9059cbb": ("transfer", -3),  # Standard ERC20 function
+            "23b872dd": ("transferFrom", -3),  # Standard ERC20 function
+            "095ea7b3": ("approve", -3),  # Standard ERC20 function
+            "70a08231": ("balanceOf", -3),  # Standard ERC20 function
+            "18160ddd": ("totalSupply", -3),  # Standard ERC20 function
         }
         
         bytecode_lower = bytecode.lower()
-        found_patterns = []
-        pattern_risk = 0
+        risky_functions = []
+        positive_functions = []
+        selector_risk = 0
         
-        for pattern, risk in honeypot_patterns.items():
-            if pattern in bytecode_lower:
-                found_patterns.append(pattern)
-                pattern_risk += risk
+        for selector, (name, risk) in function_selectors.items():
+            if selector in bytecode_lower:
+                if risk > 0:  # Risky functions
+                    risky_functions.append(name)
+                    selector_risk += risk
+                elif risk < 0:  # Positive security indicators
+                    positive_functions.append(name)
+                    selector_risk += risk
         
-        if found_patterns:
-            warnings.append(f"⚠️ Suspicious patterns found: {', '.join(found_patterns)}")
-            risk_score += min(pattern_risk, 20)
+        logger.info(f"Function analysis: {len(risky_functions)} risky, {len(positive_functions)} positive, selector_risk={selector_risk}")
         
-        data["suspicious_patterns"] = found_patterns
+        # Report findings
+        if risky_functions:
+            warnings.append(f"⚠️ Privileged functions: {', '.join(risky_functions)}")
+        
+        # Check if this is a standard ERC20 (has basic functions)
+        standard_erc20_count = len(positive_functions)
+        if standard_erc20_count >= 4:  # Has most standard ERC20 functions
+            data["is_standard_erc20"] = True
+        else:
+            data["is_standard_erc20"] = False
+            # Missing standard functions is suspicious for a token
+            if standard_erc20_count < 2:
+                warnings.append("⚠️ Missing standard ERC20 functions - may not be a real token")
+                selector_risk += 15
+        
+        # Apply selector-based risk (can be negative to reduce score)
+        risk_score = max(0, risk_score + selector_risk)
+        
+        data["risky_functions"] = risky_functions
+        data["positive_indicators"] = positive_functions
         
         
         # Bytecode metadata
@@ -374,12 +390,23 @@ async def analyze(address: str, blockchain) -> Dict[str, Any]:
         data["bytecode_hash"] = bytecode_hash[:16]
         data["bytecode_size"] = len(bytecode)
         
-        features["honeypot_pattern_count"] = len(found_patterns)
+        features["risky_function_count"] = len(risky_functions)
+        features["positive_indicator_count"] = len(positive_functions)
+        features["is_standard_erc20"] = 1 if data.get("is_standard_erc20") else 0
         features["bytecode_size_normalized"] = min(len(bytecode) / 50000, 1.0)
+        features["has_mint"] = 1 if "40c10f19" in bytecode_lower else 0
+        features["has_blacklist"] = 1 if "f9f92be4" in bytecode_lower else 0
+        features["has_renounce_ownership"] = 1 if "715018a6" in bytecode_lower else 0
+        
+        # Bonus for clean, standard contracts
+        if not bytecode_analysis["patterns"] and data.get("is_standard_erc20") and 4000 < len(bytecode) < 40000:
+            risk_score = max(0, risk_score - 15)  # Reduce risk for normal-sized standard ERC20
+            logger.info(f"Clean standard ERC20 bonus applied: -15 risk")
         
         risk_score = min(risk_score, 100)
+        risk_score = max(0, risk_score)  # Ensure non-negative
         
-        logger.info(f"Pattern matching complete for {address}: Risk={risk_score}")
+        logger.info(f"Pattern matching complete for {address}: Final Risk={risk_score} (bytecode: {len(bytecode)} bytes, patterns: {len(bytecode_analysis['patterns'])}, standard_erc20: {data.get('is_standard_erc20', False)})")
         
         return {
             "risk_score": risk_score,
