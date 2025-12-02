@@ -427,17 +427,50 @@ async def analyze(address: str, blockchain) -> Dict[str, Any]:
 
         # Supply verification risk
         if total_supply is None:
-            # Moderate risk: supply opacity can hide mint exploits
-            risk_score += 15
-            warnings.append("⚠️ Supply transparency issue: total supply unavailable")
+            # High risk: supply opacity can hide mint exploits
+            risk_score += 25  # Increased from 15
+            warnings.append("⚠️ Supply transparency issue: total supply unavailable - high risk")
         elif total_supply == 0:
-            risk_score += 20
-            warnings.append("🚨 Reported total supply is zero - suspicious")
+            risk_score += 35  # Increased from 20
+            warnings.append("🚨 Reported total supply is zero - likely fake/scam token")
+        elif total_supply > 0:
+            # Check for suspiciously large supply (e.g., > 1 quadrillion)
+            # Normalize by decimals first
+            if decimals and decimals > 0:
+                normalized_supply = total_supply / (10 ** decimals)
+                
+                logger.info(f"Normalized supply: {normalized_supply:.2e} tokens")
+                
+                if normalized_supply >= 100_000_000_000_000:  # >= 100 trillion
+                    risk_score += 25
+                    warnings.append(f"🚨 Extremely large supply ({normalized_supply:.2e}) - potential scam pattern")
+                elif normalized_supply >= 10_000_000_000_000:  # >= 10 trillion
+                    risk_score += 18
+                    warnings.append(f"⚠️ Very large supply ({normalized_supply:.2e}) - be cautious")
+                elif normalized_supply >= 1_000_000_000_000:  # >= 1 trillion
+                    risk_score += 10
+                    warnings.append(f"⚡ Large supply ({normalized_supply:.2e}) - verify legitimacy")
+                
+                # Check for suspiciously small supply (excluding wrapped tokens like WBTC)
+                if normalized_supply < 100:  # Less than 100 tokens total
+                    risk_score += 15
+                    warnings.append(f"⚠️ Extremely low supply ({normalized_supply:.2f}) - unusual tokenomics")
 
-        # Decimals default assumption risk (light)
+        # Decimals verification
+        if decimals is not None and decimals != 18:
+            # Non-standard decimals - not necessarily bad but worth noting
+            if decimals < 6 or decimals > 24:
+                risk_score += 10
+                warnings.append(f"⚠️ Unusual decimals ({decimals}) - non-standard, verify carefully")
+            elif decimals != 18 and decimals != 8 and decimals != 6:
+                # 18, 8, 6 are common standards
+                risk_score += 5
+                warnings.append(f"⚡ Non-standard decimals ({decimals}) - uncommon but may be legitimate")
+
+        # Decimals default assumption risk
         if decimals_fetch_method == "default_assumption":
-            risk_score += 5
-            warnings.append("ℹ️ Decimals unverified; using 18 by assumption")
+            risk_score += 12  # Increased from 5
+            warnings.append("⚠️ Decimals unverified - using 18 by assumption, may affect calculations")
         
         # H) Low confidence penalty
         if confidence < 50:
