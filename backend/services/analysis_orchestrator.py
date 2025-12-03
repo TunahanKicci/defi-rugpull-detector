@@ -90,7 +90,14 @@ class AnalysisOrchestrator:
             honeypot_result = None
             try:
                 logger.info(f"Running honeypot simulation for {address}...")
-                honeypot_result = await self.honeypot_simulator.analyze(address, self.blockchain)
+                # Pass liquidity USD from liquidity module if available
+                liquidity_usd = None
+                try:
+                    lp = module_results.get("liquidity_pool", {})
+                    liquidity_usd = lp.get("data", {}).get("liquidity_usd")
+                except Exception:
+                    liquidity_usd = None
+                honeypot_result = await self.honeypot_simulator.analyze(address, self.blockchain, liquidity_usd=liquidity_usd)
             except Exception as e:
                 logger.warning(f"Honeypot simulation failed: {e}")
                 honeypot_result = {
