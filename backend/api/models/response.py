@@ -42,6 +42,9 @@ class AnalysisResponse(BaseModel):
     # Module results
     modules: Dict[str, ModuleResult] = Field(..., description="Individual module results")
     
+    # Honeypot Simulation (Special - separate from modules)
+    honeypot_simulation: Optional[Dict[str, Any]] = Field(None, description="Dynamic honeypot simulation results")
+    
     # Aggregated insights
     warnings: List[str] = Field(default_factory=list, description="All warnings")
     red_flags: List[str] = Field(default_factory=list, description="Critical issues")

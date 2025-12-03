@@ -3,7 +3,7 @@ Analysis Orchestrator - Coordinates all analysis modules
 """
 import logging
 import time
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from datetime import datetime
 
 from modules import (
@@ -15,6 +15,8 @@ from modules import (
     f_tokenomics,
     h_ml_risk_scorer
 )
+# Honeypot simulator is separate - not part of main modules
+from modules import i_honeypot_simulator
 from services.blockchain.ethereum import EthereumChain
 from services.blockchain.bsc import BSCChain
 from services.blockchain.polygon import PolygonChain
@@ -44,6 +46,9 @@ class AnalysisOrchestrator:
             "pattern_matching": e_pattern_matching,
             "tokenomics": f_tokenomics,
         }
+        
+        # Honeypot simulator - separate from main modules
+        self.honeypot_simulator = i_honeypot_simulator
         
         self.ml_scorer = h_ml_risk_scorer
     
@@ -81,6 +86,20 @@ class AnalysisOrchestrator:
             # Step 2: Run all analysis modules
             module_results = await self._run_modules(address)
             
+            # Step 2.5: Run honeypot simulation (SEPARATE - not part of module results)
+            honeypot_result = None
+            try:
+                logger.info(f"Running honeypot simulation for {address}...")
+                honeypot_result = await self.honeypot_simulator.analyze(address, self.blockchain)
+            except Exception as e:
+                logger.warning(f"Honeypot simulation failed: {e}")
+                honeypot_result = {
+                    "error": str(e),
+                    "verdict": "UNKNOWN",
+                    "data": {},
+                    "warnings": []
+                }
+            
             # Step 3: Extract features for ML
             features = self._extract_features(module_results)
             
@@ -92,7 +111,8 @@ class AnalysisOrchestrator:
                 address=address,
                 contract_info=contract_info,
                 module_results=module_results,
-                ml_result=ml_result
+                ml_result=ml_result,
+                honeypot_result=honeypot_result  # Pass honeypot result separately
             )
             
             # Calculate duration
@@ -222,7 +242,8 @@ class AnalysisOrchestrator:
         address: str,
         contract_info: ContractInfo,
         module_results: Dict[str, Dict[str, Any]],
-        ml_result: Dict[str, Any]
+        ml_result: Dict[str, Any],
+        honeypot_result: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """Aggregate all results into final response"""
         
@@ -260,6 +281,7 @@ class AnalysisOrchestrator:
             "risk_score": round(risk_score, 2),
             "risk_level": risk_level,
             "modules": {k: v.model_dump() for k, v in modules.items()},
+            "honeypot_simulation": honeypot_result,  # SEPARATE FIELD - not in modules
             "warnings": all_warnings,
             "red_flags": list(set(red_flags))[:5],  # Top 5 unique red flags
             "recommendations": recommendations,

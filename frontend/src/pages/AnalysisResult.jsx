@@ -59,6 +59,10 @@ export default function AnalysisResult() {
         setError(null)
         const data = await analyzeToken(address, chain)
         
+        // DEBUG: Log honeypot simulation data
+        console.log('🔍 API Response:', data)
+        console.log('🎯 Honeypot Simulation:', data?.honeypot_simulation)
+        
         if (!cancelled) {
           setResult(data)
         }
@@ -284,6 +288,133 @@ export default function AnalysisResult() {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {/* Honeypot Simulation - SPECIAL CARD */}
+      {result.honeypot_simulation && (
+        <div className={`card border-2 ${
+          result.honeypot_simulation.data?.verdict === 'HONEYPOT' 
+            ? 'border-red-500 bg-gradient-to-br from-red-900/20 to-red-800/10' 
+            : result.honeypot_simulation.data?.verdict === 'SAFE'
+            ? 'border-green-500 bg-gradient-to-br from-green-900/20 to-green-800/10'
+            : 'border-yellow-500 bg-gradient-to-br from-yellow-900/20 to-yellow-800/10'
+        }`}>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-3">
+              <div className={`p-3 rounded-lg ${
+                result.honeypot_simulation.data?.verdict === 'HONEYPOT' 
+                  ? 'bg-red-500/30' 
+                  : result.honeypot_simulation.data?.verdict === 'SAFE'
+                  ? 'bg-green-500/30'
+                  : 'bg-yellow-500/30'
+              }`}>
+                <Shield className={`w-6 h-6 ${
+                  result.honeypot_simulation.data?.verdict === 'HONEYPOT' 
+                    ? 'text-red-400' 
+                    : result.honeypot_simulation.data?.verdict === 'SAFE'
+                    ? 'text-green-400'
+                    : 'text-yellow-400'
+                }`} />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold">🎯 Honeypot Simulation</h3>
+                <p className="text-sm text-slate-400">Dynamic buy/sell transaction test</p>
+              </div>
+            </div>
+            <div className={`px-4 py-2 rounded-lg font-bold text-lg ${
+              result.honeypot_simulation.data?.verdict === 'HONEYPOT' 
+                ? 'bg-red-500/30 text-red-300' 
+                : result.honeypot_simulation.data?.verdict === 'SAFE'
+                ? 'bg-green-500/30 text-green-300'
+                : result.honeypot_simulation.data?.verdict === 'LOCKED'
+                ? 'bg-red-500/30 text-red-300'
+                : 'bg-yellow-500/30 text-yellow-300'
+            }`}>
+              {result.honeypot_simulation.data?.verdict || 'UNKNOWN'}
+            </div>
+          </div>
+
+          {/* Simulation Results Grid */}
+          <div className="grid md:grid-cols-3 gap-4 mb-4">
+            {/* Buy Simulation */}
+            <div className="bg-slate-800/50 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-semibold text-slate-400">Buy Test</span>
+                {result.honeypot_simulation.data?.buy_simulation?.success ? (
+                  <CheckCircle className="w-5 h-5 text-green-400" />
+                ) : (
+                  <XCircle className="w-5 h-5 text-red-400" />
+                )}
+              </div>
+              <p className="text-xs text-slate-300">
+                {result.honeypot_simulation.data?.buy_simulation?.message || 'No data'}
+              </p>
+              {result.honeypot_simulation.data?.buy_simulation?.gas_estimate && (
+                <p className="text-xs text-slate-500 mt-1">
+                  Gas: {result.honeypot_simulation.data.buy_simulation.gas_estimate.toLocaleString()}
+                </p>
+              )}
+            </div>
+
+            {/* Sell Simulation */}
+            <div className="bg-slate-800/50 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-semibold text-slate-400">Sell Test</span>
+                {result.honeypot_simulation.data?.sell_simulation?.success ? (
+                  <CheckCircle className="w-5 h-5 text-green-400" />
+                ) : (
+                  <XCircle className="w-5 h-5 text-red-400" />
+                )}
+              </div>
+              <p className="text-xs text-slate-300">
+                {result.honeypot_simulation.data?.sell_simulation?.message || 'No data'}
+              </p>
+              {result.honeypot_simulation.data?.sell_simulation?.gas_estimate && (
+                <p className="text-xs text-slate-500 mt-1">
+                  Gas: {result.honeypot_simulation.data.sell_simulation.gas_estimate.toLocaleString()}
+                </p>
+              )}
+            </div>
+
+            {/* Transfer Test */}
+            <div className="bg-slate-800/50 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-semibold text-slate-400">Transfer Test</span>
+                {result.honeypot_simulation.data?.transfer_simulation ? (
+                  result.honeypot_simulation.data.transfer_simulation.success ? (
+                    <CheckCircle className="w-5 h-5 text-green-400" />
+                  ) : (
+                    <XCircle className="w-5 h-5 text-red-400" />
+                  )
+                ) : (
+                  <span className="text-xs text-slate-500">N/A</span>
+                )}
+              </div>
+              <p className="text-xs text-slate-300">
+                {result.honeypot_simulation.data?.transfer_simulation?.message || 'Not tested'}
+              </p>
+            </div>
+          </div>
+
+          {/* Warnings */}
+          {result.honeypot_simulation.warnings && result.honeypot_simulation.warnings.length > 0 && (
+            <div className="space-y-1">
+              {result.honeypot_simulation.warnings.map((warning, idx) => (
+                <div key={idx} className="flex items-start space-x-2 text-sm">
+                  <AlertTriangle className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
+                  <span className="text-slate-300">{warning}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Confidence */}
+          <div className="mt-4 pt-4 border-t border-slate-700/50 text-sm text-slate-400">
+            Confidence: <span className="font-semibold text-slate-300">
+              {result.honeypot_simulation.data?.verdict_confidence || 'unknown'}
+            </span>
+          </div>
         </div>
       )}
 
