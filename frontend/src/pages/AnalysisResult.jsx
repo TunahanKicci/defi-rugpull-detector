@@ -124,6 +124,16 @@ export default function AnalysisResult() {
     return 'bg-green-900/20 border-green-700'
   }
 
+  // Format large numbers with K, M, B suffixes
+  const formatLargeNumber = (num) => {
+    if (!num || num === 0) return '$0'
+    const absNum = Math.abs(num)
+    if (absNum >= 1e9) return `$${(num / 1e9).toFixed(2)}B`
+    if (absNum >= 1e6) return `$${(num / 1e6).toFixed(2)}M`
+    if (absNum >= 1e3) return `$${(num / 1e3).toFixed(2)}K`
+    return `$${num.toFixed(2)}`
+  }
+
   // Prepare radar chart data
   const getRadarData = () => {
     if (!result?.modules) return []
@@ -257,6 +267,132 @@ export default function AnalysisResult() {
           </p>
         </div>
       </div>
+
+      {/* XAI - Explainable AI Risk Explanation */}
+      {result.risk_explanation && (
+        <div className="card bg-gradient-to-br from-purple-900/20 to-blue-900/20 border-purple-700">
+          <div className="flex items-center space-x-3 mb-6">
+            <div className="p-3 rounded-lg bg-purple-500/30">
+              <AlertTriangle className="w-6 h-6 text-purple-400" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold">🧠 Risk Explanation (XAI)</h3>
+              <p className="text-sm text-slate-400">Açıklanabilir yapay zeka - Risk faktörleri analizi</p>
+            </div>
+          </div>
+
+          {/* Summary */}
+          <div className="bg-slate-800/50 rounded-lg p-4 mb-6">
+            <h4 className="text-lg font-semibold mb-2 text-purple-300">Özet</h4>
+            <p className="text-slate-200 whitespace-pre-line">
+              {result.risk_explanation.summary}
+            </p>
+            {result.risk_explanation.explanation_confidence && (
+              <p className="text-sm text-slate-400 mt-2">
+                Güven skoru: {(result.risk_explanation.explanation_confidence * 100).toFixed(0)}%
+              </p>
+            )}
+          </div>
+
+          {/* Top Risk Factors */}
+          {result.risk_explanation.top_factors && result.risk_explanation.top_factors.length > 0 && (
+            <div className="space-y-4 mb-6">
+              <h4 className="text-lg font-semibold text-purple-300">Top Risk Faktörleri</h4>
+              {result.risk_explanation.top_factors.map((factor, idx) => (
+                <div 
+                  key={idx} 
+                  className="bg-slate-800/50 rounded-lg p-4 border-l-4"
+                  style={{
+                    borderLeftColor: 
+                      factor.severity === 'KRİTİK' ? '#ef4444' :
+                      factor.severity === 'YÜKSEK' ? '#f97316' :
+                      factor.severity === 'ORTA' ? '#eab308' : '#22c55e'
+                  }}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-2xl font-bold text-purple-400">#{factor.rank}</span>
+                      <span className="text-lg font-semibold text-slate-200">{factor.factor}</span>
+                    </div>
+                    <span 
+                      className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                        factor.severity === 'KRİTİK' ? 'bg-red-500/30 text-red-300' :
+                        factor.severity === 'YÜKSEK' ? 'bg-orange-500/30 text-orange-300' :
+                        factor.severity === 'ORTA' ? 'bg-yellow-500/30 text-yellow-300' :
+                        'bg-green-500/30 text-green-300'
+                      }`}
+                    >
+                      {factor.severity}
+                    </span>
+                  </div>
+                  <p className="text-slate-300 mb-3">{factor.description}</p>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-slate-400">Risk Katkısı:</span>
+                      <span className="ml-2 font-semibold text-red-400">
+                        {factor.risk_contribution.toFixed(1)}/100
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400">Etki Oranı:</span>
+                      <span className="ml-2 font-semibold text-purple-400">
+                        %{factor.impact_percentage.toFixed(1)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Impact Breakdown Chart */}
+          {result.risk_explanation.impact_breakdown && 
+           Object.keys(result.risk_explanation.impact_breakdown).length > 0 && (
+            <div className="bg-slate-800/50 rounded-lg p-4">
+              <h4 className="text-lg font-semibold mb-4 text-purple-300">Risk Faktörü Dağılımı</h4>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart 
+                  data={
+                    Object.entries(result.risk_explanation.impact_breakdown)
+                      .sort((a, b) => b[1] - a[1])
+                      .map(([name, value]) => ({ name, value }))
+                  }
+                  layout="vertical"
+                  margin={{ top: 5, right: 30, left: 150, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+                  <XAxis 
+                    type="number" 
+                    stroke="#94a3b8"
+                    label={{ value: 'Etki Yüzdesi (%)', position: 'insideBottom', offset: -5, fill: '#94a3b8' }}
+                  />
+                  <YAxis 
+                    type="category" 
+                    dataKey="name" 
+                    stroke="#94a3b8"
+                    width={140}
+                    tick={{ fill: '#cbd5e1', fontSize: 12 }}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#1e293b', 
+                      border: '1px solid #475569',
+                      borderRadius: '8px'
+                    }}
+                    labelStyle={{ color: '#e2e8f0' }}
+                    formatter={(value) => [`${value.toFixed(1)}%`, 'Etki']}
+                  />
+                  <Bar 
+                    dataKey="value" 
+                    fill="#a78bfa"
+                    radius={[0, 8, 8, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Red Flags */}
       {result.red_flags && result.red_flags.length > 0 && (
@@ -788,7 +924,7 @@ export default function AnalysisResult() {
                     <div className="text-center">
                       <p className="text-xs text-slate-400">Liquidity USD</p>
                       <p className="text-sm font-bold text-blue-400">
-                        ${parseFloat(liquidityData.liquidity_usd || 0).toLocaleString()}
+                        {formatLargeNumber(parseFloat(liquidityData.liquidity_usd || 0))}
                       </p>
                     </div>
                     <div className="text-center">
@@ -806,7 +942,7 @@ export default function AnalysisResult() {
                     <div className="text-center">
                       <p className="text-xs text-slate-400">Market Cap</p>
                       <p className="text-sm font-bold text-yellow-400">
-                        ${parseFloat(liquidityData.market_cap || 0).toLocaleString()}
+                        {formatLargeNumber(parseFloat(liquidityData.market_cap || 0))}
                       </p>
                     </div>
                   </div>

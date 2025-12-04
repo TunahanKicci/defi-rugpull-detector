@@ -19,6 +19,8 @@ from modules import (
 from modules import i_honeypot_simulator
 # Whale detector AI - separate simulator like honeypot
 from modules import k_whale_detector
+# XAI - Explainable AI for risk explanation
+from modules import xai_explainer
 from services.blockchain.ethereum import EthereumChain
 from services.blockchain.bsc import BSCChain
 from services.blockchain.polygon import PolygonChain
@@ -135,14 +137,31 @@ class AnalysisOrchestrator:
             # Step 4: Calculate ML risk score
             ml_result = await self.ml_scorer.predict(features, module_results)
             
-            # Step 5: Aggregate results
+            # Step 5: Generate XAI Explanation (Explainable AI)
+            risk_explanation = None
+            try:
+                logger.info(f"Generating XAI risk explanation for {address}...")
+                risk_explanation = await xai_explainer.explain_risk(
+                    risk_score=ml_result.get("risk_score", 50),
+                    module_results=module_results,
+                    honeypot_result=honeypot_result,
+                    whale_detector_result=whale_detector_result,
+                    feature_importance=ml_result.get("feature_importance")
+                )
+                logger.info(f"XAI explanation generated successfully")
+            except Exception as e:
+                logger.warning(f"XAI explanation generation failed: {e}")
+                risk_explanation = None
+            
+            # Step 6: Aggregate results
             result = self._aggregate_results(
                 address=address,
                 contract_info=contract_info,
                 module_results=module_results,
                 ml_result=ml_result,
                 honeypot_result=honeypot_result,  # Pass honeypot result separately
-                whale_detector_result=whale_detector_result  # Pass whale detector result
+                whale_detector_result=whale_detector_result,  # Pass whale detector result
+                risk_explanation=risk_explanation  # Pass XAI explanation
             )
             
             # Calculate duration
@@ -274,7 +293,8 @@ class AnalysisOrchestrator:
         module_results: Dict[str, Dict[str, Any]],
         ml_result: Dict[str, Any],
         honeypot_result: Optional[Dict[str, Any]] = None,
-        whale_detector_result: Optional[Dict[str, Any]] = None
+        whale_detector_result: Optional[Dict[str, Any]] = None,
+        risk_explanation: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """Aggregate all results into final response"""
         
@@ -318,6 +338,7 @@ class AnalysisOrchestrator:
             "red_flags": list(set(red_flags))[:5],  # Top 5 unique red flags
             "recommendations": recommendations,
             "feature_importance": ml_result.get("feature_importance"),
+            "risk_explanation": risk_explanation,  # XAI - Explainable AI
             "timestamp": datetime.utcnow().isoformat()
         }
     

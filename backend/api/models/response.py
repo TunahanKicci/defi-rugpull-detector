@@ -56,6 +56,9 @@ class AnalysisResponse(BaseModel):
     # ML Explainability
     feature_importance: Optional[Dict[str, float]] = Field(None, description="Feature importance scores")
     
+    # XAI - Explainable AI (Risk Explanation)
+    risk_explanation: Optional[Dict[str, Any]] = Field(None, description="Detailed explanation of risk score using XAI")
+    
     # Metadata
     timestamp: datetime = Field(default_factory=datetime.utcnow, description="Analysis timestamp")
     analysis_duration_ms: Optional[float] = Field(None, description="Analysis duration in milliseconds")
