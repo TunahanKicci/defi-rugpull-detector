@@ -17,6 +17,8 @@ from modules import (
 )
 # Honeypot simulator is separate - not part of main modules
 from modules import i_honeypot_simulator
+# Whale detector AI - separate simulator like honeypot
+from modules import k_whale_detector
 from services.blockchain.ethereum import EthereumChain
 from services.blockchain.bsc import BSCChain
 from services.blockchain.polygon import PolygonChain
@@ -49,6 +51,9 @@ class AnalysisOrchestrator:
         
         # Honeypot simulator - separate from main modules
         self.honeypot_simulator = i_honeypot_simulator
+        
+        # Whale detector AI - separate simulator
+        self.whale_detector = k_whale_detector
         
         self.ml_scorer = h_ml_risk_scorer
     
@@ -107,6 +112,23 @@ class AnalysisOrchestrator:
                     "warnings": []
                 }
             
+            # Step 2.6: Run whale detector AI (SEPARATE - like honeypot simulator)
+            whale_detector_result = None
+            try:
+                logger.info(f"Running whale detector AI for {address}...")
+                # Pass holder data from Module B if available
+                holder_data = module_results.get("holder_analysis", {})
+                whale_detector_result = await self.whale_detector.analyze(address, self.blockchain, holder_data=holder_data)
+            except Exception as e:
+                logger.warning(f"Whale detector AI failed: {e}")
+                whale_detector_result = {
+                    "risk_score": 0,
+                    "confidence": 0,
+                    "verdict": "UNKNOWN",
+                    "data": {},
+                    "warnings": [f"⚠️ Analysis unavailable: {str(e)}"]
+                }
+            
             # Step 3: Extract features for ML
             features = self._extract_features(module_results)
             
@@ -119,7 +141,8 @@ class AnalysisOrchestrator:
                 contract_info=contract_info,
                 module_results=module_results,
                 ml_result=ml_result,
-                honeypot_result=honeypot_result  # Pass honeypot result separately
+                honeypot_result=honeypot_result,  # Pass honeypot result separately
+                whale_detector_result=whale_detector_result  # Pass whale detector result
             )
             
             # Calculate duration
@@ -250,7 +273,8 @@ class AnalysisOrchestrator:
         contract_info: ContractInfo,
         module_results: Dict[str, Dict[str, Any]],
         ml_result: Dict[str, Any],
-        honeypot_result: Optional[Dict[str, Any]] = None
+        honeypot_result: Optional[Dict[str, Any]] = None,
+        whale_detector_result: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """Aggregate all results into final response"""
         
@@ -289,6 +313,7 @@ class AnalysisOrchestrator:
             "risk_level": risk_level,
             "modules": {k: v.model_dump() for k, v in modules.items()},
             "honeypot_simulation": honeypot_result,  # SEPARATE FIELD - not in modules
+            "whale_detector": whale_detector_result,  # SEPARATE FIELD - AI whale analysis
             "warnings": all_warnings,
             "red_flags": list(set(red_flags))[:5],  # Top 5 unique red flags
             "recommendations": recommendations,

@@ -9,7 +9,8 @@ from . import (
     e_pattern_matching,
     f_tokenomics,
     h_ml_risk_scorer,
-    i_honeypot_simulator
+    i_honeypot_simulator,
+    k_whale_detector
 )
 
 __all__ = [
@@ -20,5 +21,6 @@ __all__ = [
     'e_pattern_matching',
     'f_tokenomics',
     'h_ml_risk_scorer',
-    'i_honeypot_simulator'
+    'i_honeypot_simulator',
+    'k_whale_detector'
 ]

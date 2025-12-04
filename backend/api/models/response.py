@@ -45,6 +45,9 @@ class AnalysisResponse(BaseModel):
     # Honeypot Simulation (Special - separate from modules)
     honeypot_simulation: Optional[Dict[str, Any]] = Field(None, description="Dynamic honeypot simulation results")
     
+    # Whale Detector AI (Special - separate simulator like honeypot)
+    whale_detector: Optional[Dict[str, Any]] = Field(None, description="AI-powered whale manipulation detection")
+    
     # Aggregated insights
     warnings: List[str] = Field(default_factory=list, description="All warnings")
     red_flags: List[str] = Field(default_factory=list, description="Critical issues")
