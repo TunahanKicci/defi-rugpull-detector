@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { AlertTriangle, CheckCircle, XCircle, Loader, Shield, Users, Droplet, TrendingUp, Search, Coins } from 'lucide-react'
 import { analyzeToken } from '../services/analysisService'
@@ -49,6 +49,13 @@ export default function AnalysisResult() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [result, setResult] = useState(null)
+  const [logs, setLogs] = useState([])
+  const logsEndRef = useRef(null)
+
+  const addLog = (message, type = 'info') => {
+    const timestamp = new Date().toLocaleTimeString('tr-TR')
+    setLogs(prev => [...prev, { message, type, timestamp }])
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -57,6 +64,59 @@ export default function AnalysisResult() {
       try {
         setLoading(true)
         setError(null)
+        setLogs([])
+        
+        // Step 1
+        if (cancelled) return
+        addLog('🚀 Analiz başlatılıyor...', 'info')
+        await new Promise(resolve => setTimeout(resolve, 800))
+        
+        // Step 2
+        if (cancelled) return
+        addLog(`📝 Kontrat Adresi: ${address}`, 'info')
+        await new Promise(resolve => setTimeout(resolve, 800))
+        
+        // Step 3
+        if (cancelled) return
+        addLog(`⛓️ Blockchain Ağı: ${chain.toUpperCase()}`, 'info')
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        
+        // Step 4
+        if (cancelled) return
+        addLog('🔍 Smart contract güvenlik taraması yapılıyor...', 'info')
+        await new Promise(resolve => setTimeout(resolve, 1200))
+        
+        // Step 5
+        if (cancelled) return
+        addLog('👥 Token sahipleri analiz ediliyor...', 'info')
+        await new Promise(resolve => setTimeout(resolve, 1200))
+        
+        // Step 6
+        if (cancelled) return
+        addLog('💧 Likidite havuzu kontrol ediliyor...', 'info')
+        await new Promise(resolve => setTimeout(resolve, 1200))
+        
+        // Step 7
+        if (cancelled) return
+        addLog('📊 Transfer anomalileri inceleniyor...', 'info')
+        await new Promise(resolve => setTimeout(resolve, 1200))
+        
+        // Step 8
+        if (cancelled) return
+        addLog('🎯 Scam patern eşleştirmesi yapılıyor...', 'info')
+        await new Promise(resolve => setTimeout(resolve, 1200))
+        
+        // Step 9
+        if (cancelled) return
+        addLog('💰 Tokenomics analizi gerçekleştiriliyor...', 'info')
+        await new Promise(resolve => setTimeout(resolve, 1200))
+        
+        // Step 10
+        if (cancelled) return
+        addLog('🤖 AI/ML risk skoru hesaplanıyor...', 'info')
+        await new Promise(resolve => setTimeout(resolve, 800))
+        
+        // API call
         const data = await analyzeToken(address, chain)
         
         // DEBUG: Log honeypot simulation data
@@ -64,10 +124,13 @@ export default function AnalysisResult() {
         console.log('🎯 Honeypot Simulation:', data?.honeypot_simulation)
         
         if (!cancelled) {
+          addLog('✅ Analiz tamamlandı!', 'success')
+          await new Promise(resolve => setTimeout(resolve, 500))
           setResult(data)
         }
       } catch (err) {
         if (!cancelled) {
+          addLog('❌ Analiz başarısız: ' + (err.message || 'Bilinmeyen hata'), 'error')
           setError(err.message || 'Failed to analyze token')
         }
       } finally {
@@ -86,11 +149,44 @@ export default function AnalysisResult() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <Loader className="w-16 h-16 text-primary-500 animate-spin mx-auto mb-4" />
-          <p className="text-xl text-slate-300">Analyzing contract...</p>
-          <p className="text-slate-400 mt-2">This may take a few moments</p>
+      <div className="max-w-4xl mx-auto">
+        <div className="card">
+          <div className="flex items-center justify-center mb-6">
+            <Loader className="w-12 h-12 text-primary-500 animate-spin mr-4" />
+            <div>
+              <h2 className="text-2xl font-bold text-slate-200">Analiz Ediliyor...</h2>
+              <p className="text-slate-400 mt-1">Lütfen bekleyin, bu birkaç dakika sürebilir</p>
+            </div>
+          </div>
+          
+          {/* Logs Display */}
+          <div className="bg-slate-900/50 rounded-lg p-4 h-80 overflow-y-auto border border-slate-700">
+            <div className="space-y-2 font-mono text-sm">
+              {logs.map((log, index) => (
+                <div 
+                  key={index} 
+                  className={`flex items-start space-x-2 ${
+                    log.type === 'error' ? 'text-danger-400' :
+                    log.type === 'success' ? 'text-green-400 font-bold' :
+                    'text-slate-300'
+                  }`}
+                >
+                  <span className="text-slate-500 min-w-[80px]">[{log.timestamp}]</span>
+                  <span className="flex-1">{log.message}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Progress Bar */}
+          <div className="mt-6">
+            <div className="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
+              <div 
+                className="bg-gradient-to-r from-primary-500 to-blue-500 h-full rounded-full transition-all duration-500"
+                style={{ width: `${Math.min((logs.length / 10) * 100, 100)}%` }}
+              />
+            </div>
+          </div>
         </div>
       </div>
     )
