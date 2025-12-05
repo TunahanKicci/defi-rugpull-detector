@@ -5,6 +5,10 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
+    fs: {
+      // Allow reading files one level above (root README.md)
+      allow: ['..']
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:8000',

@@ -4,7 +4,6 @@ import Footer from './components/Layout/Footer'
 import Home from './pages/Home'
 import AnalysisResult from './pages/AnalysisResult'
 import Monitor from './pages/Monitor'
-import History from './pages/History'
 import About from './pages/About'
 import NotFound from './pages/NotFound'
 
@@ -18,7 +17,6 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/analyze/:address" element={<AnalysisResult />} />
             <Route path="/monitor/:address" element={<Monitor />} />
-            <Route path="/history" element={<History />} />
             <Route path="/about" element={<About />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
