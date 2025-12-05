@@ -255,18 +255,6 @@ export default function AnalysisResult() {
     ]
   }
 
-  // Prepare top holders bar chart data
-  const getTopHoldersData = () => {
-    const holderData = result?.modules?.holder_analysis?.data
-    if (!holderData?.top_holders) return []
-
-    return holderData.top_holders.slice(0, 5).map((holder, idx) => ({
-      name: `Holder ${idx + 1}`,
-      address: holder.address ? `${holder.address.slice(0, 6)}...${holder.address.slice(-4)}` : `#${idx + 1}`,
-      percentage: holder.percentage || 0
-    }))
-  }
-
   // Custom tooltip for radar chart
   const CustomRadarTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
@@ -812,7 +800,6 @@ export default function AnalysisResult() {
           // Special rendering for holder_analysis with charts
           if (moduleName === 'holder_analysis') {
             const holderDistribution = getHolderDistributionData()
-            const topHoldersData = getTopHoldersData()
             
             return (
               <div 
@@ -839,71 +826,33 @@ export default function AnalysisResult() {
                   </span>
                 </div>
 
-                {/* Charts Row */}
-                <div className="grid md:grid-cols-2 gap-4 mb-4">
-                  {/* Pie Chart - Holder Distribution */}
-                  {holderDistribution && (
-                    <div>
-                      <h4 className="text-sm font-semibold text-slate-300 mb-2 text-center">
-                        Token Distribution
-                      </h4>
-                      <ResponsiveContainer width="100%" height={200}>
-                        <PieChart>
-                          <Pie
-                            data={holderDistribution}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            label={({ name, value }) => `${name}: ${value.toFixed(1)}%`}
-                            outerRadius={70}
-                            fill="#8884d8"
-                            dataKey="value"
-                          >
-                            {holderDistribution.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <Tooltip content={<CustomPieTooltip />} />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                  )}
-
-                  {/* Bar Chart - Top Holders */}
-                  {topHoldersData.length > 0 && (
-                    <div>
-                      <h4 className="text-sm font-semibold text-slate-300 mb-2 text-center">
-                        Top 5 Holders
-                      </h4>
-                      <ResponsiveContainer width="100%" height={200}>
-                        <BarChart 
-                          data={topHoldersData}
-                          layout="horizontal"
-                          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                {/* Chart */}
+                {holderDistribution && (
+                  <div className="mb-4">
+                    <h4 className="text-sm font-semibold text-slate-300 mb-2 text-center">
+                      Token Distribution
+                    </h4>
+                    <ResponsiveContainer width="100%" height={220}>
+                      <PieChart>
+                        <Pie
+                          data={holderDistribution}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, value }) => `${name}: ${value.toFixed(1)}%`}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
                         >
-                          <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                          <XAxis type="number" stroke="#64748b" tick={{ fill: '#94a3b8', fontSize: 10 }} />
-                          <YAxis 
-                            type="category" 
-                            dataKey="address" 
-                            stroke="#64748b" 
-                            tick={{ fill: '#94a3b8', fontSize: 9 }}
-                            width={70}
-                          />
-                          <Tooltip 
-                            contentStyle={{ 
-                              backgroundColor: '#1e293b', 
-                              border: '1px solid #475569',
-                              borderRadius: '0.5rem',
-                              color: '#e2e8f0'
-                            }}
-                          />
-                          <Bar dataKey="percentage" fill="#3b82f6" />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  )}
-                </div>
+                          {holderDistribution.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip content={<CustomPieTooltip />} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
 
                 {/* Metrics */}
                 {moduleData.data && (
