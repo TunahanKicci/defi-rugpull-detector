@@ -26,7 +26,7 @@ export default function Home() {
     <div className="max-w-4xl mx-auto">
       {/* Hero Section */}
       <div className="text-center mb-12">
-        <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-primary-400 to-blue-600 text-transparent bg-clip-text">
+        <h1 className="text-5xl font-bold mb-4 pb-2 bg-gradient-to-r from-primary-400 to-blue-600 text-transparent bg-clip-text">
           🛡️ DeFi Rug Pull Detector
         </h1>
         <p className="text-xl text-slate-300 mb-2">
