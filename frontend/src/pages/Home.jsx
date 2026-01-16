@@ -53,8 +53,8 @@ export default function Home() {
       </div>
 
       {/* Search Card */}
-      <div className="card mb-12">
-        <h2 className="text-2xl font-bold mb-6 text-center">Analyze a Token Contract</h2>
+      <div className="card mb-12 border border-primary-500/40 shadow-lg shadow-primary-500/10">
+        <h2 className="text-2xl font-bold mb-6 text-center text-slate-100">Analyze a Token Contract</h2>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -100,10 +100,10 @@ export default function Home() {
       </div>
 
       {/* Token Panel - fixed top right, collapsible and scrollable */}
-      <div className="fixed top-24 right-4 z-50 w-64 card shadow-lg p-3">
+      <div className="fixed top-24 right-4 z-50 w-64 card shadow-lg p-3 border border-success-500/40">
         {/* Header with toggle button */}
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-base font-bold">Quick Select</h3>
+        <div className="flex items-center justify-between mb-2 pb-2">
+          <h3 className="text-base font-bold text-success-400">Quick Select</h3>
           <button
             onClick={() => setTokenPanelOpen(!tokenPanelOpen)}
             className="btn btn-xs btn-ghost"
@@ -136,7 +136,7 @@ export default function Home() {
 
       {/* Main Content Grid: Features only */}
       <div className="grid md:grid-cols-3 gap-6 mt-10">
-        <div className="card">
+        <div className="card border-l-4 border-l-primary-500/60">
           <div className="text-3xl mb-3">🔍</div>
           <h3 className="text-lg font-bold mb-2">Smart Contract Scan</h3>
           <p className="text-slate-400 text-sm">
@@ -144,7 +144,7 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="card">
+        <div className="card border-l-4 border-l-success-500/60">
           <div className="text-3xl mb-3">💧</div>
           <h3 className="text-lg font-bold mb-2">Liquidity Analysis</h3>
           <p className="text-slate-400 text-sm">
@@ -152,7 +152,7 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="card">
+        <div className="card border-l-4 border-l-warning-500/60">
           <div className="text-3xl mb-3">🤖</div>
           <h3 className="text-lg font-bold mb-2">AI Risk Scoring</h3>
           <p className="text-slate-400 text-sm">
