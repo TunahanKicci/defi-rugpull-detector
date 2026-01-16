@@ -79,9 +79,9 @@ export default function Home() {
               value={chain}
               onChange={(e) => setChain(e.target.value)}
             >
-              <option value="ethereum">Ethereum</option>
-              <option value="bsc">Binance Smart Chain</option>
-              <option value="polygon">Polygon</option>
+              <option value="ethereum" className="bg-slate-800 text-white">Ethereum</option>
+              <option value="bsc" className="bg-slate-800 text-white">Binance Smart Chain</option>
+              <option value="polygon" className="bg-slate-800 text-white">Polygon</option>
             </select>
           </div>
 
@@ -103,7 +103,7 @@ export default function Home() {
       <div className="fixed top-24 right-4 z-50 w-64 card shadow-lg p-3">
         {/* Header with toggle button */}
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-base font-bold">Popular Tokens</h3>
+          <h3 className="text-base font-bold">Quick Select</h3>
           <button
             onClick={() => setTokenPanelOpen(!tokenPanelOpen)}
             className="btn btn-xs btn-ghost"
