@@ -1,6 +1,44 @@
-import readmeContent from '../../../README.md?raw'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+
+// Fallback content for production build
+const fallbackContent = `
+# 🛡️ DeFi Rug Pull Detector
+
+**Enterprise-grade DeFi güvenlik platformu** - Yatırımcıları dolandırıcılıklara karşı koruyan, Açıklanabilir Yapay Zeka (XAI) ve Ensemble ML ile desteklenen gerçek zamanlı risk analiz sistemi.
+
+## 🎯 Temel Özellikler
+
+### 🔬 Analiz Modülleri
+- **Contract Security** - Akıllı kontrat güvenlik analizi
+- **Holder Analysis** - Token holder dağılımı analizi
+- **Liquidity Pool** - Likidite havuzu durumu
+- **Transfer Anomaly** - Anormal transfer tespiti
+- **Pattern Matching** - Bilinen scam patternleri
+- **Tokenomics** - Token ekonomisi analizi
+- **Honeypot Simulator** - Gerçek alım-satım simülasyonu
+- **Whale Detector AI** - ML-based whale manipülasyon tespiti
+
+### 🧠 Açıklanabilir Yapay Zeka (XAI)
+"Neden bu token riskli?" sorusunu cevaplayabilen ileri seviye açıklama sistemi
+
+### 🤖 Ensemble ML Sistemi
+4 farklı ML modeli (XGBoost, LightGBM, CatBoost, Deep Neural Network) kullanarak en yüksek doğruluk
+
+## ⚡ Özellikleri
+
+- 🔄 **Real-time Analysis** - 20-30 saniyede kapsamlı analiz
+- 📊 **Multi-chain Support** - Ethereum, BSC, Polygon
+- 🎨 **Modern UI** - Responsive React + Tailwind CSS
+- 📈 **Data Visualization** - Radar chart, Bar chart, Pie chart
+- 🚀 **Async Architecture** - Non-blocking I/O, yüksek performans
+- 📝 **Comprehensive Logging** - Detaylı analiz kayıtları
+- 🌐 **RESTful API** - FastAPI + Swagger documentation
+
+## 📖 Daha Fazla Bilgi
+
+Detaylı bilgi için GitHub repository'sini ziyaret edin veya API Documentation sayfasını kontrol edin.
+`
 
 export default function About() {
   return (
@@ -8,7 +46,7 @@ export default function About() {
       <div className="card">
         <h1 className="text-3xl font-bold mb-6">About / README</h1>
         <p className="text-sm text-slate-400 mb-4">
-          Bu içerik doğrudan <code>README.md</code> dosyasından yüklenir; README güncellendikçe burası da yenilenir.
+          Bu içerik proje hakkında bilgi sağlar.
         </p>
 
         <div className="prose prose-invert prose-slate max-w-none
@@ -33,7 +71,7 @@ export default function About() {
                         prose-img:rounded-lg prose-img:shadow-lg
                         ">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>
-            {readmeContent}
+            {fallbackContent}
           </ReactMarkdown>
         </div>
       </div>

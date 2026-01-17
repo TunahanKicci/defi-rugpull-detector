@@ -198,7 +198,54 @@ python train_models.py --data path/to/your/data.csv
 
 Eğitim sonrası modeller `backend/data/models/` klasörüne kaydedilir.
 
-## 🚀 Kullanım
+## � Docker ile Kurulum (Önerilir)
+
+Docker kullanan yöntem, tüm bağımlılıkları otomatik olarak kurar ve kurulum sorunlarını ortadan kaldırır.
+
+### Gereksinimler
+- **Docker Desktop** yüklü olmalı
+- **Docker Compose** (Docker Desktop ile birlikte gelir)
+
+### Hızlı Başlangıç
+
+**Windows:**
+```powershell
+docker-start.bat
+```
+
+**Terminal (herhangi platform):**
+```bash
+docker-compose up -d
+```
+
+### Erişim Noktaları
+
+- **Frontend**: http://localhost:5173
+- **Backend API**: http://localhost:8000
+- **API Docs**: http://localhost:8000/docs
+
+### Yararlı Docker Commands
+
+```bash
+# Servisleri başlat
+docker-compose up -d
+
+# Logları canlı izle (tüm servisler)
+docker-compose logs -f
+
+# Belirli servisin logları
+docker-compose logs -f backend
+docker-compose logs -f frontend
+
+# Servisleri durdur
+docker-compose down
+```
+
+**Prod deployment:** `docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d`
+
+**Detaylı bilgi için**: [docs/DOCKER.md](docs/DOCKER.md)
+
+## �🚀 Kullanım
 
 ### Temel Kullanım
 
