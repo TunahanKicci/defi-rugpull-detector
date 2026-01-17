@@ -1,0 +1,53 @@
+Windows PowerShell
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Install the latest PowerShell for new features and improvements! https://aka.ms/PSWindows
+
+C:\Users\tunah\OneDrive\Masaüstü\httpd-2.4.66-251206-Win64-VS17\Apache24\bin> .\ab -n 10 -c 2 -p .\veri.txt -T application/json "http://localhost:8000/api/analyze/0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599?chain=ethereum&force_refresh=false"
+This is ApacheBench, Version 2.3 <$Revision: 1923142 $>
+Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
+Licensed to The Apache Software Foundation, http://www.apache.org/
+
+Benchmarking localhost (be patient).....done
+
+
+Server Software:        uvicorn
+Server Hostname:        localhost
+Server Port:            8000
+
+Document Path:          /api/analyze/0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599?chain=ethereum&force_refresh=false
+Document Length:        6246 bytes
+
+Concurrency Level:      2
+Time taken for tests:   122.109 seconds
+Complete requests:      10
+Failed requests:        5
+   (Connect: 0, Receive: 0, Length: 5, Exceptions: 0)
+Total transferred:      63756 bytes
+Total body sent:        2250
+HTML transferred:       62486 bytes
+Requests per second:    0.08 [#/sec] (mean)
+Time per request:       24421.839 [ms] (mean)
+Time per request:       12210.919 [ms] (mean, across all concurrent requests)
+Transfer rate:          0.51 [Kbytes/sec] received
+                        0.02 kb/s sent
+                        0.53 kb/s total
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:        0    0   0.3      0       1
+Processing: 12550 21725 4479.2  23443   25527
+Waiting:    12550 21724 4479.2  23443   25526
+Total:      12550 21725 4479.3  23443   25527
+
+Percentage of the requests served within a certain time (ms)
+  50%  23443
+  66%  23524
+  75%  23525
+  80%  25527
+  90%  25527
+  95%  25527
+  98%  25527
+  99%  25527
+ 100%  25527 (longest request)
+C:\Users\tunah\OneDrive\Masaüstü\httpd-2.4.66-251206-Win64-VS17\Apache24\bin>

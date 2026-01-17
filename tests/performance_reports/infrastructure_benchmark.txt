@@ -1,0 +1,52 @@
+Windows PowerShell
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Install the latest PowerShell for new features and improvements! https://aka.ms/PSWindows
+
+Loading personal and system profiles took 601ms.
+C:\Users\tunah\OneDrive\Masaüstü\httpd-2.4.66-251206-Win64-VS17\Apache24\bin> .\ab -n 100 -c 10 http://localhost:8000/docs
+This is ApacheBench, Version 2.3 <$Revision: 1923142 $>
+Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
+Licensed to The Apache Software Foundation, http://www.apache.org/
+
+Benchmarking localhost (be patient).....done
+
+
+Server Software:        uvicorn
+Server Hostname:        localhost
+Server Port:            8000
+
+Document Path:          /docs
+Document Length:        947 bytes
+
+Concurrency Level:      10
+Time taken for tests:   0.387 seconds
+Complete requests:      100
+Failed requests:        40
+   (Connect: 0, Receive: 0, Length: 40, Exceptions: 0)
+Non-2xx responses:      40
+Total transferred:      75060 bytes
+HTML transferred:       61220 bytes
+Requests per second:    258.42 [#/sec] (mean)
+Time per request:       38.697 [ms] (mean)
+Time per request:       3.870 [ms] (mean, across all concurrent requests)
+Transfer rate:          189.42 [Kbytes/sec] received
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:        0    0   0.4      0       2
+Processing:     5   35  24.7     22     106
+Waiting:        4   28  21.8     17      94
+Total:          5   35  24.7     22     106
+
+Percentage of the requests served within a certain time (ms)
+  50%     22
+  66%     46
+  75%     50
+  80%     53
+  90%     78
+  95%     91
+  98%    100
+  99%    106
+ 100%    106 (longest request)
+C:\Users\tunah\OneDrive\Masaüstü\httpd-2.4.66-251206-Win64-VS17\Apache24\bin>
