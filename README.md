@@ -1,6 +1,6 @@
 # 🛡️ DeFi Rug Pull Detector
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: Source Available](https://img.shields.io/badge/License-Source%20Available-red.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![React 18](https://img.shields.io/badge/react-18-61dafb.svg)](https://reactjs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109-009688.svg)](https://fastapi.tiangolo.com/)
@@ -9,6 +9,8 @@
 **Enterprise-grade DeFi güvenlik platformu** - Yatırımcıları dolandırıcılıklara (rug pull, honeypot, scam) karşı koruyan, **Açıklanabilir Yapay Zeka (XAI)** ve **Ensemble ML** ile desteklenen gerçek zamanlı risk analiz sistemi.
 
 > ⚠️ **Disclaimer**: Bu araç sadece bilgilendirme amaçlıdır ve yatırım tavsiyesi değildir. Her zaman kendi araştırmanızı yapın (DYOR).
+
+> 🔒 **Lisans Uyarısı**: Bu proje **kaynak kodu görüntüleme lisansı** altındadır. Kodu **sadece inceleyebilir ve katkıda bulunabilirsiniz**. İndirip kullanmak, fork'lamak veya ticari amaçla kullanmak **yasaktır**. Detaylar için [LICENSE](LICENSE) dosyasına bakın.
 
 ---
 
