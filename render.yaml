@@ -6,39 +6,44 @@ services:
     region: frankfurt
     plan: free
     branch: main
+    rootDir: backend  
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT --workers 1 --no-access-log
     envVars:
       - key: PYTHON_VERSION
-        value: 3.10.0
+        value: 3.10.12 
       - key: APP_ENV
         value: production
-      - fromGroup: rugpull-detector-secrets
+      - fromGroup: rugpull-detector-secrets 
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: rugpull-detector-cache
+          property: connectionString
 
-  # Frontend Service
-  - type: web
+  - type: static
     name: rugpull-detector-frontend
-    env: node
     region: frankfurt
-    plan: free
     branch: main
-    buildCommand: cd frontend && npm install && npm run build
-    startCommand: cd frontend && npm run preview -- --host 0.0.0.0 --port $PORT
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist 
+    routes:
+      - type: rewrite
+        source: /**
+        destination: /index.html 
     envVars:
       - key: NODE_VERSION
         value: 18.17.0
-      - fromGroup: rugpull-detector-secrets
+      - key: VITE_API_BASE_URL
+        fromService:
+          type: web
+          name: rugpull-detector-backend
+          property: url
 
-  # Redis Cache
   - type: redis
     name: rugpull-detector-cache
     region: frankfurt
     plan: free
     maxmemoryPolicy: allkeys-lru
     ipAllowList: []
-
-databases:
-  # MongoDB Database
-  - name: rugpull-detector-db
-    region: frankfurt
-    plan: free
