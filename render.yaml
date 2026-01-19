@@ -1,4 +1,5 @@
 services:
+  # Backend Service (Web Service - 750 saat kotasından yer)
   - type: web
     name: rugpull-detector-backend
     env: python
@@ -6,6 +7,7 @@ services:
     plan: free
     branch: main
     rootDir: backend
+    # Modelleri build sırasında eğit ve kütüphaneleri kur
     buildCommand: pip install -r requirements.txt && python train_models.py --generate --samples 1000
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT --workers 1 --no-access-log
     envVars:
@@ -20,9 +22,12 @@ services:
           name: rugpull-detector-cache
           property: connectionString
 
-  - type: static
+  # Frontend Service (Static Site - ÜCRETSİZ & LİMİTSİZ)
+  # DÜZELTME: type 'web' yapıldı ve env 'static' eklendi.
+  - type: web
     name: rugpull-detector-frontend
-
+    env: static
+    # region: frankfurt <-- BU YOK (Statik siteler globaldir)
     branch: main
     rootDir: frontend
     buildCommand: npm install && npm run build
@@ -34,12 +39,14 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 18.17.0
+      # Backend adresini çeker (örn: rugpull-backend.onrender.com)
       - key: VITE_API_BASE_URL
         fromService:
           type: web
           name: rugpull-detector-backend
           property: host
 
+  # Redis Cache (Ücretsiz)
   - type: redis
     name: rugpull-detector-cache
     region: frankfurt
