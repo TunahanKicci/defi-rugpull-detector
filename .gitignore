@@ -48,10 +48,10 @@ logs/
 *.sqlite3
 
 # ML Models
-*.pkl
-*.h5
-*.pt
-*.pth
+#*.pkl
+#*.h5
+#*.pt
+#*.pth
 
 # Cache
 .cache/

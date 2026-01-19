@@ -1,5 +1,4 @@
 services:
-  # Backend Service (Python) - BURASI AYNI
   - type: web
     name: rugpull-detector-backend
     env: python
@@ -7,7 +6,7 @@ services:
     plan: free
     branch: main
     rootDir: backend
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install -r requirements.txt && python train_models.py --generate --samples 1000
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT --workers 1 --no-access-log
     envVars:
       - key: PYTHON_VERSION
@@ -21,18 +20,17 @@ services:
           name: rugpull-detector-cache
           property: connectionString
 
-  # Frontend Service (Node Web Service olarak yapılandırıldı)
-  - type: web
+  - type: static
     name: rugpull-detector-frontend
-    env: node  # <-- DÜZELTME: static yerine node yapıldı (Frankfurt için)
-    region: frankfurt
-    plan: free
+
     branch: main
     rootDir: frontend
-    # Build sırasında 'serve' paketini de kuruyoruz ki start aşamasında hızlı olsun
-    buildCommand: npm install && npm install serve && npm run build
-    # 'dist' klasörünü belirtilen portta sunuyoruz
-    startCommand: npx serve -s dist -l $PORT
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /**
+        destination: /index.html
     envVars:
       - key: NODE_VERSION
         value: 18.17.0
@@ -42,7 +40,6 @@ services:
           name: rugpull-detector-backend
           property: host
 
-  # Redis Cache - BURASI AYNI
   - type: redis
     name: rugpull-detector-cache
     region: frankfurt
