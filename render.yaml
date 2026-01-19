@@ -1,37 +1,41 @@
 services:
-  # Backend Service
+  # Backend Service (Python)
   - type: web
     name: rugpull-detector-backend
     env: python
     region: frankfurt
     plan: free
     branch: main
-    rootDir: backend  
+    rootDir: backend
     buildCommand: pip install -r requirements.txt
+    # Workers 1 olarak ayarlandı, RAM tasarrufu için
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT --workers 1 --no-access-log
     envVars:
       - key: PYTHON_VERSION
-        value: 3.10.12 
+        value: 3.10.12
       - key: APP_ENV
         value: production
-      - fromGroup: rugpull-detector-secrets 
+      - fromGroup: rugpull-detector-secrets
       - key: REDIS_URL
         fromService:
           type: redis
           name: rugpull-detector-cache
           property: connectionString
 
-  - type: static
+  # Frontend Service (Static Site)
+  # DÜZELTME: type 'web' yapıldı ve env 'static' eklendi.
+  - type: web
     name: rugpull-detector-frontend
+    env: static
     region: frankfurt
     branch: main
     rootDir: frontend
     buildCommand: npm install && npm run build
-    staticPublishPath: dist 
+    staticPublishPath: dist
     routes:
       - type: rewrite
         source: /**
-        destination: /index.html 
+        destination: /index.html
     envVars:
       - key: NODE_VERSION
         value: 18.17.0
@@ -41,6 +45,7 @@ services:
           name: rugpull-detector-backend
           property: url
 
+  # Redis Cache
   - type: redis
     name: rugpull-detector-cache
     region: frankfurt
