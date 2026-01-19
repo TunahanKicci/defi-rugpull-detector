@@ -8,7 +8,6 @@ services:
     branch: main
     rootDir: backend
     buildCommand: pip install -r requirements.txt
-    # Workers 1 olarak ayarlandı, RAM tasarrufu için
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT --workers 1 --no-access-log
     envVars:
       - key: PYTHON_VERSION
@@ -23,11 +22,10 @@ services:
           property: connectionString
 
   # Frontend Service (Static Site)
-  # DÜZELTME: type 'web' yapıldı ve env 'static' eklendi.
   - type: web
     name: rugpull-detector-frontend
     env: static
-    region: frankfurt
+    # region: frankfurt  <-- BU SATIR SİLİNDİ (Statik siteler globaldir)
     branch: main
     rootDir: frontend
     buildCommand: npm install && npm run build
@@ -39,11 +37,12 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 18.17.0
+      # DİKKAT: 'property: url' yerine 'property: host' kullanıldı
       - key: VITE_API_BASE_URL
         fromService:
           type: web
           name: rugpull-detector-backend
-          property: url
+          property: host
 
   # Redis Cache
   - type: redis
