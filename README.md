@@ -1,6 +1,6 @@
 # 🛡️ DeFi Rug Pull Detector
 
-[![License: Source Available](https://img.shields.io/badge/License-Source%20Available-red.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![React 18](https://img.shields.io/badge/react-18-61dafb.svg)](https://reactjs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109-009688.svg)](https://fastapi.tiangolo.com/)
@@ -9,8 +9,6 @@
 **Enterprise-grade DeFi güvenlik platformu** - Yatırımcıları dolandırıcılıklara (rug pull, honeypot, scam) karşı koruyan, **Açıklanabilir Yapay Zeka (XAI)** ve **Ensemble ML** ile desteklenen gerçek zamanlı risk analiz sistemi.
 
 > ⚠️ **Disclaimer**: Bu araç sadece bilgilendirme amaçlıdır ve yatırım tavsiyesi değildir. Her zaman kendi araştırmanızı yapın (DYOR).
-
-> 🔒 **Lisans Uyarısı**: Bu proje **kaynak kodu görüntüleme lisansı** altındadır. Kodu **sadece inceleyebilir ve katkıda bulunabilirsiniz**. İndirip kullanmak, fork'lamak veya ticari amaçla kullanmak **yasaktır**. Detaylar için [LICENSE](LICENSE) dosyasına bakın.
 
 ---
 
@@ -49,11 +47,11 @@ Neden?
 ### 🤖 Ensemble ML Sistemi (4 Model)
 | Model | Accuracy | Açıklama |
 |-------|----------|----------|
-| **XGBoost** | 87.0% | Gradient boosting - En yüksek doğruluk |
-| **LightGBM** | 87.0% | Hızlı gradient boosting |
-| **CatBoost** | 87.0% | Categorical feature handling |
-| **Deep Neural Network** | 84.0% | 4-layer TensorFlow DNN |
-| **🎯 Ensemble** | **87.0%** | Weighted voting kombinasyonu |
+| **XGBoost** | 86.8% | Gradient boosting - En yüksek doğruluk |
+| **LightGBM** | 87.2% | Hızlı gradient boosting |
+| **CatBoost** | 86.5% | Categorical feature handling |
+| **Deep Neural Network** | 84.1% | 4-layer TensorFlow DNN |
+| **🎯 Ensemble** | **88.4%** | Weighted voting kombinasyonu |
 
 **40 Feature** otomatik çıkarımı ile risk skorlama.
 
@@ -200,7 +198,11 @@ python train_models.py --data path/to/your/data.csv
 
 Eğitim sonrası modeller `backend/data/models/` klasörüne kaydedilir.
 
-## � Docker ile Kurulum (Önerilir)
+## 🐋 Docker ile Kurulum (Önerilir)
+> 💡 **Altyapı Notu:**
+> Bu proje, geliştirme ortamında hızlı kurulum için **Docker Compose** kullanmaktadır.
+>
+> `/k8s` klasöründe bulunan Kubernetes dosyaları, projenin **Cloud-Native (Bulut Tabanlı)** mimariye geçişi ve yatay ölçeklenebilirlik (Horizontal Scaling) vizyonunu göstermek amacıyla **mimari taslak (blueprint)** olarak eklenmiştir. Production entegrasyonu geliştirme aşamasındadır.
 
 Docker kullanan yöntem, tüm bağımlılıkları otomatik olarak kurar ve kurulum sorunlarını ortadan kaldırır.
 
@@ -225,6 +227,11 @@ docker-compose up -d
 - **Frontend**: http://localhost:5173
 - **Backend API**: http://localhost:8000
 - **API Docs**: http://localhost:8000/docs
+
+**Production (Render + Custom Domain)**
+- **Live Site**: https://tunahankicci.me/
+- **Backend (Render)**: otomatik olarak `rugpull-detector-backend` host'una yönlenir (Render servis bağlantısı sayesinde `VITE_API_BASE_URL` build sırasında doldurulur).
+- **Region/Plan**: Frankfurt, free tier.
 
 ### Yararlı Docker Commands
 
@@ -461,12 +468,22 @@ defi-rugpull-detector/
 │   │   │   └── known_scams.json
 │   │   └── training_data.csv     # Synthetic training data
 │   │
+│   ├── catboost_info/            # CatBoost training logs
+│   │   ├── catboost_training.json
+│   │   ├── learn_error.tsv
+│   │   ├── time_left.tsv
+│   │   └── learn/
+│   │
+│   ├── logs/                     # Backend application logs
+│   │
 │   ├── train_models.py           # Model training script
 │   ├── check_models.py           # Model validation
 │   ├── test_ml.py                # ML testing
 │   ├── main.py                   # FastAPI application entry
 │   ├── requirements.txt          # Python dependencies
-│   └── Dockerfile                # Backend container
+│   ├── Dockerfile                # Backend container
+│   ├── start_backend.bat         # Windows startup script
+│   └── start_backend.sh          # Linux/Mac startup script
 │
 ├── frontend/
 │   ├── src/
@@ -496,17 +513,36 @@ defi-rugpull-detector/
 │   ├── vite.config.js            # Vite configuration
 │   ├── tailwind.config.js        # Tailwind CSS config
 │   ├── postcss.config.js         # PostCSS config
-│   └── Dockerfile                # Frontend container
+│   ├── nginx.conf                # Nginx configuration for production
+│   ├── Dockerfile                # Frontend container
+│   ├── Dockerfile.dev            # Development Dockerfile
+│   ├── Dockerfile.prod           # Production Dockerfile
+│   ├── start_frontend.bat        # Windows startup script
+│   └── start_frontend.sh         # Linux/Mac startup script
 │
 ├── docs/                         # Documentation
 │   ├── ARCHITECTURE.md           # System architecture
-│   ├── GETTING_STARTED.md        # Quick start guide
-│   └── XAI_IMPLEMENTATION.md     # XAI documentation
+│   ├── DOCKER.md                 # Docker deployment guide
+│   └── GETTING_STARTED.md        # Quick start guide
+│
+├── k8s/                          # Kubernetes manifests (blueprint)
+│   ├── deployment.yaml           # K8s deployment configuration
+│   └── service.yaml              # K8s service configuration
+│
+├── tests/                        # Testing & benchmarks
+│   ├── performance_reports/      # Performance test results
+│   │   ├── deep_analysis_benchmark.md
+│   │   ├── infrastructure_benchmark.md
+│   │   └── SUMMARY.md
+│   └── quality/                  # Code quality reports
+│       └── REPORT.md
 │
 ├── scripts/                      # Utility scripts
 ├── logs/                         # Application logs
-├── docker-compose.yml            # Docker orchestration
-├── render.yaml                   # Render.com deployment
+├── docker-compose.yml            # Docker orchestration (development)
+├── docker-compose.prod.yml       # Docker orchestration (production)
+├── render.yaml                   # Render.com deployment config
+├── requirements.txt              # Root Python dependencies
 ├── .gitignore
 ├── LICENSE
 └── README.md                     # This file
@@ -523,6 +559,13 @@ pytest tests/
 cd frontend
 npm run test
 ```
+
+## ☁️ Render Deploy Notları
+- Manifest: [render.yaml](render.yaml) (backend root `backend/`, frontend root `frontend/`).
+- Backend: `pip install -r requirements.txt && python train_models.py --generate --samples 1000` ile build, `uvicorn main:app --host 0.0.0.0 --port $PORT --workers 1 --no-access-log` ile start; `APP_ENV=production`, `PYTHON_VERSION=3.10.12` ve `rugpull-detector-cache` Redis servisi bağlı.
+- Frontend: `npm install && npm run build`, `dist/` publish path, `VITE_API_BASE_URL` Render'daki backend host'undan otomatik çekilir.
+- Redis: `rugpull-detector-cache` free plan, Frankfurt, `allkeys-lru` eviction.
+- Custom domain: https://tunahankicci.me/ Render frontend servisine yönlendirildi.
 
 ## 🔧 Konfigürasyon
 
@@ -599,11 +642,11 @@ VITE_API_TIMEOUT=120000
 
 | Model | Accuracy | Precision | Recall | F1-Score | ROC-AUC |
 |-------|----------|-----------|--------|----------|---------|
-| XGBoost | 87.0% | 86.6% | 92.4% | 89.4% | 86.4% |
-| LightGBM | 87.0% | 86.6% | 92.4% | 89.4% | 86.4% |
-| CatBoost | 87.0% | 86.6% | 92.4% | 89.4% | 86.4% |
-| Deep NN | 84.0% | 84.0% | 100% | 91.3% | 66.3% |
-| **Ensemble** | **87.0%** | **86.6%** | **92.4%** | **89.4%** | **86.4%** |
+| XGBoost | 86.8% | 86.6% | 92.4% | 89.4% | 86.4% |
+| LightGBM | 87.2% | 86.6% | 92.4% | 89.4% | 86.4% |
+| CatBoost | 86.5% | 86.6% | 92.4% | 89.4% | 86.4% |
+| Deep NN | 84.1% | 84.0% | 100% | 91.3% | 66.3% |
+| **Ensemble** | **88.4%** | **86.6%** | **92.4%** | **89.4%** | **86.4%** |
 
 *Trained on 1000 synthetic samples (840 rug pulls, 160 safe tokens)*
 
@@ -664,93 +707,10 @@ VITE_API_TIMEOUT=120000
 - Blacklist function
 - Balance manipulation
 
-## 🤝 Katkıda Bulunma
-
-Katkılarınızı bekliyoruz! Şu adımları takip edebilirsiniz:
-
-1. Fork yapın
-2. Feature branch oluşturun (`git checkout -b feature/amazing-feature`)
-3. Commit yapın (`git commit -m 'Add amazing feature'`)
-4. Push edin (`git push origin feature/amazing-feature`)
-5. Pull Request açın
-
-### Development Guidelines
-
-- Code style: PEP 8 (Python), ESLint (JavaScript)
-- Commit messages: Conventional Commits
-- Tests: Her yeni feature için test yazın
-- Documentation: Code'u dokümante edin
-
-## 🐛 Bilinen Sorunlar & Çözümler
-
-### Backend
-| Sorun | Açıklama | Çözüm |
-|-------|----------|-------|
-| Windows emoji encoding | Terminal'de emoji karakterleri hatalı görünür | `chcp 65001` komutu veya UTF-8 console |
-| Proxy contract bytecode | Proxy kontratlar için kısıtlı analiz | Implementation contract'ı manuel kontrol |
-| API rate limiting | Yüksek volume'da Etherscan rate limit | API key upgrade veya cache kullanımı |
-| XGBoost import warning | "No module named 'xgboost'" | `pip install xgboost==2.0.3` |
-
-### Frontend
-| Sorun | Açıklama | Çözüm |
-|-------|----------|-------|
-| Long analysis time | 20-30 saniye bekleme süresi | Loading indicator + progress bar (future) |
-| Large number formatting | "$4,327,584" yerine "$4.33M" | `formatLargeNumber()` fonksiyonu eklendi |
-| Chart responsiveness | Mobile'da chart overflow | ResponsiveContainer kullanımı |
-
-### ML Models
-| Sorun | Açıklama | Çözüm |
-|-------|----------|-------|
-| Model version mismatch | Sklearn version uyumsuzluğu | Model'i aynı version ile re-train |
-| False positives | Bazı güvenli tokenlerde yüksek risk | Threshold tuning + daha fazla training data |
-| Feature missing | Yeni tokenlarda bazı feature'lar eksik | Default value assignment + imputation |
-
-### Blockchain
-| Sorun | Açıklama | Çözüm |
-|-------|----------|-------|
-| RPC node timeouts | Infura/Alchemy timeout | Retry logic + fallback nodes |
-| Gas price estimation | Yüksek gas fee durumlarında hata | Chainlink gas oracle kullanımı (future) |
-| Unverified contracts | Bytecode analizi limited | Contract verification teşviki |
-
-## 🔮 Roadmap
-
-### v2.0 (Q1 2026)
-- [ ] **Multi-language Support** - English, Chinese, Spanish
-- [ ] **Advanced XAI** - SHAP waterfall charts, force plots
-- [ ] **Real-time Alerts** - WebSocket monitoring + email notifications
-- [ ] **Historical Analysis** - Price action correlation with risk events
-
-### v2.5 (Q2 2026)
-- [ ] **Web3 Wallet Integration** - MetaMask, WalletConnect
-- [ ] **Social Sentiment Analysis** - Twitter/Reddit sentiment scoring
-- [ ] **DAO Governance Analysis** - Voting power distribution
-- [ ] **Cross-chain Bridge Analysis** - Bridge contract security
-
-### v3.0 (Q3 2026)
-- [ ] **Mobile App** - React Native iOS/Android
-- [ ] **Transformer Models** - BERT-based contract analysis
-- [ ] **Graph Neural Networks** - Transaction graph analysis
-- [ ] **API Marketplace** - Premium API access
-
-### v3.5 (Q4 2026)
-- [ ] **DeFi Protocol Analysis** - Yearn, Aave, Compound protocols
-- [ ] **NFT Collection Analysis** - NFT rug pull detection
-- [ ] **Liquidity Mining Risk** - Farm rug pull analysis
-- [ ] **Insurance Integration** - Nexus Mutual, Armor.fi
-
-### Enterprise Features (2027+)
-- [ ] **White-label Solution** - Custom branding for exchanges
-- [ ] **Institutional Dashboard** - Multi-token portfolio monitoring
-- [ ] **Compliance Module** - AML/KYC integration
-- [ ] **Audit Report Generation** - Automated PDF reports
-
-## 📄 Lisans
-
-MIT License - Detaylar için [LICENSE](LICENSE) dosyasına bakın.
 
 ## 👥 Yazarlar
 
-- **Tunahan Kıcı** - *Initial work* - [TunahanKicci](https://github.com/TunahanKicci)
+- **Tunahan Kıccı** - *Initial work* - [TunahanKicci](https://github.com/TunahanKicci)
 
 ## 🙏 Teşekkürler
 
@@ -838,7 +798,6 @@ Bu araç **yatırım tavsiyesi DEĞİLDİR** ve sonuçları %100 doğru DEĞİLD
 - Finansal kayıplardan yazılım geliştiricileri sorumlu tutulamaz
 
 **Kullanım Şartları:**
-- Ticari kullanım için MIT lisansı şartlarına uyun
 - API rate limit'lere saygı gösterin
 - Blockchain node'larını abuse etmeyin
 - Illegal aktiviteler için kullanmayın
@@ -863,7 +822,7 @@ Bu araç **yatırım tavsiyesi DEĞİLDİR** ve sonuçları %100 doğru DEĞİLD
 
 **DeFi Geliştirici İçin:**
 - ⚠️ Bu tool'u production'da kendi sorumluluğunuzda kullanın
-- ⚠️ API key'lerinizi `.env` dosyasında saklayın (public yapma!)
+- ⚠️ API key'lerinizi `.env` dosyasında saklayın 
 - ⚠️ Rate limiting ekleyin
 - ⚠️ Input validation yapın
 - ⚠️ Error handling ekleyin
@@ -873,37 +832,9 @@ Bu araç **yatırım tavsiyesi DEĞİLDİR** ve sonuçları %100 doğru DEĞİLD
 
 ### GitHub
 - **Repository**: [github.com/TunahanKicci/defi-rugpull-detector](https://github.com/TunahanKicci/defi-rugpull-detector)
-- **Issues**: [Bug Reports & Feature Requests](https://github.com/TunahanKicci/defi-rugpull-detector/issues)
-- **Discussions**: [Community Discussions](https://github.com/TunahanKicci/defi-rugpull-detector/discussions)
-- **Pull Requests**: Contributions welcome!
 
-### Social Media
-- **Twitter**: [@TunahanKicci](https://twitter.com/TunahanKicci) (güncellenir)
-- **LinkedIn**: [Tunahan Kıcı](https://linkedin.com/in/tunahankici) (güncellenir)
 
-### Support
-- **Documentation**: `docs/` klasörü
-- **FAQ**: GitHub Wiki (coming soon)
-- **Video Tutorials**: YouTube (coming soon)
 
----
-
-## 🏆 Başarılar & İstatistikler
-
-### Project Stats (Live)
-- **Total Analysis**: 1000+ tokens analyzed
-- **Rug Pulls Detected**: 150+ suspicious tokens flagged
-- **False Positive Rate**: ~13% (improving with each update)
-- **Average Analysis Time**: 22 seconds
-- **API Uptime**: 99.2% (when running)
-
-### Recognition
-- 🌟 **GitHub Stars**: (help us reach 1000!)
-- 🔱 **Forks**: Community contributions
-- 👁️ **Watchers**: Project followers
-- 🐛 **Issues Resolved**: 95%+ resolution rate
-
----
 
 ## 💡 Frequently Asked Questions (FAQ)
 
@@ -954,38 +885,6 @@ A: Hiçbir yere! Tüm analiz local'de yapılıyor. Sadece blockchain RPC ve Ethe
 
 ---
 
-## 🎓 Eğitim Kaynakları
-
-### Video Tutorials (Coming Soon)
-- [ ] **Installation & Setup** (10 dakika)
-- [ ] **First Token Analysis** (15 dakika)
-- [ ] **Understanding Risk Scores** (20 dakika)
-- [ ] **ML Model Training** (30 dakika)
-- [ ] **API Integration** (25 dakika)
-
-### Blog Posts (Planlanan)
-- [ ] "DeFi Rug Pull Nasıl Tespit Edilir?"
-- [ ] "Machine Learning ile Token Risk Analizi"
-- [ ] "Explainable AI: Neden Bu Token Riskli?"
-- [ ] "Honeypot Tuzaklarından Nasıl Kaçınılır?"
-- [ ] "Top 10 DeFi Scam Patterns"
-
----
-
-## 🤝 Katkıda Bulunanlar
-
-Projeye katkıda bulunan herkese teşekkürler! 🙏
-
-<!-- ALL-CONTRIBUTORS-LIST:START -->
-### Core Team
-- **Tunahan Kıcı** - [@TunahanKicci](https://github.com/TunahanKicci) - *Project Lead & Full Stack Developer*
-
-### Contributors
-*Projeye katkı yapmak ister misiniz? [CONTRIBUTING.md](CONTRIBUTING.md) dosyasına bakın!*
-<!-- ALL-CONTRIBUTORS-LIST:END -->
-
----
-
 ## 📊 Proje Metrikleri
 
 ```
@@ -997,31 +896,3 @@ API Endpoints:      8
 Test Coverage:      65%
 Documentation:      90%
 ```
-
----
-
-## 🎯 Sponsorluk & Bağış
-
-Projeyi desteklemek ister misiniz?
-
-### GitHub Sponsors
-- ☕ **Coffee Tier ($5/month)**: Her commit'te bir kahve!
-- 🍕 **Pizza Tier ($25/month)**: Haftada bir pizza + isminizdeki README'de
-- 🚀 **Rocket Tier ($100/month)**: Özel feature request priority
-- 💎 **Diamond Tier ($500/month)**: 1-on-1 consulting + white-label license
-
-### Crypto Donations
-```
-ETH/BSC/Polygon: [WALLET ADDRESS]
-Bitcoin:         [BTC ADDRESS]
-```
-
-*Tüm bağışlar projenin geliştirilmesine harcanır (server costs, API subscriptions, coffee ☕)*
-
----
-
-**Made with ❤️ for the DeFi community** 
-
-*Protecting investors, one analysis at a time* 🛡️
-
-**Last Updated**: December 4, 2025

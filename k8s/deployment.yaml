@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: defi-rugpull-detector
+  labels:
+    app: rugpull-detector
+spec:
+  replicas: 2 
+  selector:
+    matchLabels:
+      app: rugpull-detector
+  template:
+    metadata:
+      labels:
+        app: rugpull-detector
+    spec:
+      containers:
+      - name: backend
+        image: tunahankicci/rugpull-detector:latest
+        ports:
+        - containerPort: 8080 # Senin uygulamanın portu neyse o
+        resources: # Bankalar bu detayı sever: Kaynak kısıtlaması
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
