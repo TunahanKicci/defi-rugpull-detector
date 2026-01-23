@@ -5,6 +5,7 @@
 [![React 18](https://img.shields.io/badge/react-18-61dafb.svg)](https://reactjs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109-009688.svg)](https://fastapi.tiangolo.com/)
 [![ML Models](https://img.shields.io/badge/ML-XGBoost%20%7C%20LightGBM%20%7C%20CatBoost%20%7C%20TensorFlow-orange.svg)](https://github.com/)
+[![Medium](https://img.shields.io/badge/Medium-Technical%20Deep%20Dive-black?style=for-the-badge&logo=medium)](https://medium.com/@tunahankicci/blockchain-g%C3%BCvenli%C4%9Finde-yapay-zeka-defi-rug-pull-tespit-sistemi-mimarisi-615a636865c2)
 
 **Enterprise-grade DeFi güvenlik platformu** - Yatırımcıları dolandırıcılıklara (rug pull, honeypot, scam) karşı koruyan, **Açıklanabilir Yapay Zeka (XAI)** ve **Ensemble ML** ile desteklenen gerçek zamanlı risk analiz sistemi.
 
