@@ -549,17 +549,34 @@ defi-rugpull-detector/
 └── README.md                     # This file
 ```
 
-## 🧪 Testing
 
-```bash
-# Backend tests
-cd backend
-pytest tests/
+## 📉 Performans & Kalite Raporları
 
-# Frontend tests
-cd frontend
-npm run test
-```
+Proje, endüstri standartlarında güvenilirlik sağlamak için düzenli olarak yük ve statik kod analizi testlerinden geçirilmektedir. (Son Güncelleme: 17 Ocak 2026)
+
+### 🚀 Performans Benchmark Sonuçları
+Sistem, yerel geliştirme ortamında (Uvicorn + FastAPI) stres testine tabi tutulmuştur.
+
+| Metrik | Sonuç | Durum | Endüstri Standardı |
+|--------|-------|-------|--------------------|
+| **Altyapı Yanıt Hızı** | 5-106ms | ✅ Mükemmel | < 100ms |
+| **Throughput (Statik)** | 258.42 req/s | ✅ Mükemmel | > 100 req/s |
+| **ML Analiz Süresi** | 12-25 sn | ✅ Beklenen | 10-30 sn |
+| **ML İşlem Kapasitesi**| 0.08 req/s | ⚠️ Normal | ML yoğun işlem |
+
+> **Not:** ML analiz süresi, blockchain veri toplama ve 4 farklı yapay zeka modelinin (Ensemble) çalıştırılmasını kapsadığı için 12-25 saniye aralığı normal kabul edilmektedir.
+
+### 🛡️ SonarCloud Kalite Analizi
+Proje kodu sürekli olarak SonarCloud statik analiz araçları ile taranmaktadır.
+
+| Kategori | Derece | Detay |
+|----------|:------:|-------|
+| **Güvenlik (Security)** | **A** | 0 Kritik zafiyet (Vulnerability) |
+| **Güvenilirlik** | **B** | Exception handling geliştirmeleri sürüyor |
+| **Bakım (Maintainability)**| **A** | Düşük teknik borç |
+| **Kod Tekrarı** | **%2.1** | Mükemmel modüler yapı (< %5 ideal) |
+
+Detaylı raporlar için `/tests/performance_reports` ve `/tests/quality` dizinlerini inceleyebilirsiniz.
 
 ## ☁️ Render Deploy Notları
 - Manifest: [render.yaml](render.yaml) (backend root `backend/`, frontend root `frontend/`).
