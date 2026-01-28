@@ -203,7 +203,6 @@ Eğitim sonrası modeller `backend/data/models/` klasörüne kaydedilir.
 > 💡 **Altyapı Notu:**
 > Bu proje, geliştirme ortamında hızlı kurulum için **Docker Compose** kullanmaktadır.
 >
-> `/k8s` klasöründe bulunan Kubernetes dosyaları, projenin **Cloud-Native (Bulut Tabanlı)** mimariye geçişi ve yatay ölçeklenebilirlik (Horizontal Scaling) vizyonunu göstermek amacıyla **mimari taslak (blueprint)** olarak eklenmiştir. Production entegrasyonu geliştirme aşamasındadır.
 
 Docker kullanan yöntem, tüm bağımlılıkları otomatik olarak kurar ve kurulum sorunlarını ortadan kaldırır.
 
@@ -526,9 +525,6 @@ defi-rugpull-detector/
 │   ├── DOCKER.md                 # Docker deployment guide
 │   └── GETTING_STARTED.md        # Quick start guide
 │
-├── k8s/                          # Kubernetes manifests (blueprint)
-│   ├── deployment.yaml           # K8s deployment configuration
-│   └── service.yaml              # K8s service configuration
 │
 ├── tests/                        # Testing & benchmarks
 │   ├── performance_reports/      # Performance test results
