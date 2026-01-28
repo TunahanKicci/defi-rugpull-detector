@@ -10,7 +10,7 @@
 **Enterprise-grade DeFi güvenlik platformu** - Yatırımcıları dolandırıcılıklara (rug pull, honeypot, scam) karşı koruyan, **Açıklanabilir Yapay Zeka (XAI)** ve **Ensemble ML** ile desteklenen gerçek zamanlı risk analiz sistemi.
 
 > ⚠️ **Disclaimer**: Bu araç sadece bilgilendirme amaçlıdır ve yatırım tavsiyesi değildir. Her zaman kendi araştırmanızı yapın (DYOR).
-
+> ⚠️ **Geliştirme Notu:** Bu proje **yapay zeka (LLM)** araçları kullanılarak geliştirilmiştir. "vibe coding" yöntemleriyle oluşturulmuştur.
 ---
 
 ## 🎯 Temel Özellikler
