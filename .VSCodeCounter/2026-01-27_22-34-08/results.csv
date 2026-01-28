@@ -1,0 +1,104 @@
+"filename", "language", "YAML", "Markdown", "JSON", "pip requirements", "JavaScript", "Shell Script", "Properties", "Batch", "Docker", "Ignore", "TSV", "HTML", "Python", "PostCSS", "JavaScript JSX", "CSV", "comment", "blank", "total"
+"c:\proje2\.dockerignore", "Ignore", 0, 0, 0, 0, 0, 0, 0, 0, 0, 26, 0, 0, 0, 0, 0, 0, 5, 5, 36
+"c:\proje2\README.md", "Markdown", 0, 742, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 174, 916
+"c:\proje2\backend\Dockerfile", "Docker", 0, 0, 0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 0, 0, 0, 0, 4, 8, 24
+"c:\proje2\backend\__init__.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1
+"c:\proje2\backend\api\__init__.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1
+"c:\proje2\backend\api\middleware\__init__.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1
+"c:\proje2\backend\api\middleware\cors.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 9, 3, 24
+"c:\proje2\backend\api\middleware\error_handler.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 27, 0, 0, 0, 9, 8, 44
+"c:\proje2\backend\api\middleware\rate_limiter.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 49, 0, 0, 0, 27, 21, 97
+"c:\proje2\backend\api\models\__init__.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1
+"c:\proje2\backend\api\models\request.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 28, 0, 0, 0, 7, 9, 44
+"c:\proje2\backend\api\models\response.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 72, 0, 0, 0, 16, 21, 109
+"c:\proje2\backend\api\routers\__init__.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1
+"c:\proje2\backend\api\routers\analysis.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 65, 0, 0, 0, 27, 16, 108
+"c:\proje2\backend\api\routers\health.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 17, 0, 0, 0, 14, 6, 37
+"c:\proje2\backend\api\routers\history.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 50, 0, 0, 0, 26, 14, 90
+"c:\proje2\backend\api\routers\monitoring.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 87, 0, 0, 0, 24, 24, 135
+"c:\proje2\backend\catboost_info\catboost_training.json", "JSON", 0, 0, 104, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 104
+"c:\proje2\backend\catboost_info\learn_error.tsv", "TSV", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 101, 0, 0, 0, 0, 0, 0, 1, 102
+"c:\proje2\backend\catboost_info\time_left.tsv", "TSV", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 101, 0, 0, 0, 0, 0, 0, 1, 102
+"c:\proje2\backend\check_models.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 49, 0, 0, 0, 4, 7, 60
+"c:\proje2\backend\config\__init__.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1
+"c:\proje2\backend\config\chains.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 50, 0, 0, 0, 5, 7, 62
+"c:\proje2\backend\config\settings.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 55, 0, 0, 0, 21, 21, 97
+"c:\proje2\backend\data\models\MODEL_PERFORMANCE.md", "Markdown", 0, 120, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 41, 161
+"c:\proje2\backend\data\scam_database\known_scams.json", "JSON", 0, 0, 17, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 18
+"c:\proje2\backend\data\training_data.csv", "CSV", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1001, 0, 1, 1002
+"c:\proje2\backend\main.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 60, 0, 0, 0, 16, 20, 96
+"c:\proje2\backend\modules\__init__.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 22, 0, 0, 0, 3, 1, 26
+"c:\proje2\backend\modules\a_contract_security.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 266, 0, 0, 0, 104, 77, 447
+"c:\proje2\backend\modules\b_holder_analysis.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 360, 0, 0, 0, 85, 81, 526
+"c:\proje2\backend\modules\c_liquidity_pool.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 337, 0, 0, 0, 85, 66, 488
+"c:\proje2\backend\modules\d_transfer_anomaly.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 459, 0, 0, 0, 70, 77, 606
+"c:\proje2\backend\modules\e_pattern_matching.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 248, 0, 0, 0, 101, 81, 430
+"c:\proje2\backend\modules\f_tokenomics.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 362, 0, 0, 0, 99, 65, 526
+"c:\proje2\backend\modules\h_ml_risk_scorer.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 169, 0, 0, 0, 49, 47, 265
+"c:\proje2\backend\modules\i_honeypot_simulator.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 457, 0, 0, 0, 71, 86, 614
+"c:\proje2\backend\modules\k_whale_detector.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 261, 0, 0, 0, 69, 74, 404
+"c:\proje2\backend\modules\ml\__init__.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 1, 5
+"c:\proje2\backend\modules\ml\deep_model.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 152, 0, 0, 0, 69, 46, 267
+"c:\proje2\backend\modules\ml\ensemble_model.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 249, 0, 0, 0, 56, 50, 355
+"c:\proje2\backend\modules\ml\feature_extractor.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 84, 0, 0, 0, 24, 18, 126
+"c:\proje2\backend\modules\ml\train_whale_model.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 123, 0, 0, 0, 47, 32, 202
+"c:\proje2\backend\modules\xai_explainer.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 395, 0, 0, 0, 76, 79, 550
+"c:\proje2\backend\requirements.txt", "pip requirements", 0, 0, 0, 36, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 14, 14, 64
+"c:\proje2\backend\run.bat", "Batch", 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 4
+"c:\proje2\backend\services\__init__.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1
+"c:\proje2\backend\services\analysis_orchestrator.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 253, 0, 0, 0, 62, 51, 366
+"c:\proje2\backend\services\blockchain\__init__.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1
+"c:\proje2\backend\services\blockchain\base_chain.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 92, 0, 0, 0, 69, 21, 182
+"c:\proje2\backend\services\blockchain\bsc.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 55, 0, 0, 0, 16, 17, 88
+"c:\proje2\backend\services\blockchain\ethereum.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 55, 0, 0, 0, 18, 17, 90
+"c:\proje2\backend\services\blockchain\polygon.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 55, 0, 0, 0, 16, 17, 88
+"c:\proje2\backend\services\cache_manager.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 43, 0, 0, 0, 47, 18, 108
+"c:\proje2\backend\services\websocket_manager.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 89, 0, 0, 0, 73, 31, 193
+"c:\proje2\backend\start_backend.bat", "Batch", 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 8
+"c:\proje2\backend\start_backend.sh", "Shell Script", 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 6
+"c:\proje2\backend\test_ml.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 86, 0, 0, 0, 7, 15, 108
+"c:\proje2\backend\train_models.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 201, 0, 0, 0, 51, 65, 317
+"c:\proje2\backend\utils\__init__.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1
+"c:\proje2\backend\utils\constants.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 56, 0, 0, 0, 16, 15, 87
+"c:\proje2\backend\utils\formatters.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 0, 0, 0, 28, 19, 95
+"c:\proje2\backend\utils\logger.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 33, 0, 0, 0, 16, 11, 60
+"c:\proje2\backend\utils\validators.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 0, 0, 0, 51, 14, 89
+"c:\proje2\docker-compose.prod.yml", "YAML", 28, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 32
+"c:\proje2\docker-compose.yml", "YAML", 27, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 31
+"c:\proje2\docker-start.bat", "Batch", 0, 0, 0, 0, 0, 0, 0, 43, 0, 0, 0, 0, 0, 0, 0, 0, 2, 7, 52
+"c:\proje2\docs\ARCHITECTURE.md", "Markdown", 0, 159, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 35, 194
+"c:\proje2\docs\DOCKER.md", "Markdown", 0, 197, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 66, 263
+"c:\proje2\docs\GETTING_STARTED.md", "Markdown", 0, 87, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 43, 130
+"c:\proje2\frontend\Dockerfile", "Docker", 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 6, 13
+"c:\proje2\frontend\index.html", "HTML", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 14, 0, 0, 0, 0, 0, 1, 15
+"c:\proje2\frontend\nginx.conf", "Properties", 0, 0, 0, 0, 0, 0, 45, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 8, 59
+"c:\proje2\frontend\package-lock.json", "JSON", 0, 0, 7867, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 7868
+"c:\proje2\frontend\package.json", "JSON", 0, 0, 35, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 36
+"c:\proje2\frontend\postcss.config.js", "JavaScript", 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 7
+"c:\proje2\frontend\src\App.jsx", "JavaScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 28, 0, 0, 3, 31
+"c:\proje2\frontend\src\components\Layout\Footer.jsx", "JavaScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 66, 0, 4, 7, 77
+"c:\proje2\frontend\src\components\Layout\Header.jsx", "JavaScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 73, 0, 5, 9, 87
+"c:\proje2\frontend\src\data\ethereumTokens.js", "JavaScript", 0, 0, 0, 0, 87, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 91
+"c:\proje2\frontend\src\main.jsx", "JavaScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 2, 9
+"c:\proje2\frontend\src\pages\About.jsx", "JavaScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 76, 0, 1, 4, 81
+"c:\proje2\frontend\src\pages\AnalysisResult.jsx", "JavaScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 967, 0, 60, 74, 1101
+"c:\proje2\frontend\src\pages\History.jsx", "JavaScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 0, 0, 1, 13
+"c:\proje2\frontend\src\pages\Home.jsx", "JavaScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 135, 0, 12, 19, 166
+"c:\proje2\frontend\src\pages\Monitor.jsx", "JavaScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 0, 0, 1, 13
+"c:\proje2\frontend\src\pages\NotFound.jsx", "JavaScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 14, 0, 0, 2, 16
+"c:\proje2\frontend\src\services\analysisService.js", "JavaScript", 0, 0, 0, 0, 13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13, 3, 29
+"c:\proje2\frontend\src\services\api.js", "JavaScript", 0, 0, 0, 0, 22, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 5, 28
+"c:\proje2\frontend\src\styles\index.css", "PostCSS", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 109, 0, 0, 2, 23, 134
+"c:\proje2\frontend\start_frontend.bat", "Batch", 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 7
+"c:\proje2\frontend\start_frontend.sh", "Shell Script", 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 6
+"c:\proje2\frontend\tailwind.config.js", "JavaScript", 0, 0, 0, 0, 45, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 47
+"c:\proje2\frontend\vite.config.js", "JavaScript", 0, 0, 0, 0, 17, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 20
+"c:\proje2\k8s\deployment.yaml", "YAML", 26, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 26
+"c:\proje2\k8s\service.yaml", "YAML", 12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12
+"c:\proje2\render.yaml", "YAML", 46, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 2, 55
+"c:\proje2\requirements.txt", "pip requirements", 0, 0, 0, 35, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 14, 14, 63
+"c:\proje2\tests\performance_reports\SUMMARY.md", "Markdown", 0, 73, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 31, 104
+"c:\proje2\tests\performance_reports\deep_analysis_benchmark.md", "Markdown", 0, 99, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 27, 126
+"c:\proje2\tests\performance_reports\infrastructure_benchmark.md", "Markdown", 0, 114, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 146
+"c:\proje2\tests\quality\REPORT.md", "Markdown", 0, 32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11, 43
+"Total", "-", 139, 1623, 8023, 71, 190, 6, 45, 57, 19, 26, 202, 14, 5655, 109, 1390, 1001, 1842, 2086, 22498

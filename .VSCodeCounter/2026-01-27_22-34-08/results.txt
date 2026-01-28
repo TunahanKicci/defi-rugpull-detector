@@ -1,0 +1,177 @@
+Date : 2026-01-27 22:34:08
+Directory : c:\proje2
+Total : 102 files,  18570 codes, 1842 comments, 2086 blanks, all 22498 lines
+
+Languages
++------------------+------------+------------+------------+------------+------------+
+| language         | files      | code       | comment    | blank      | total      |
++------------------+------------+------------+------------+------------+------------+
+| JSON             |          4 |      8,023 |          0 |          3 |      8,026 |
+| Python           |         51 |      5,655 |      1,687 |      1,378 |      8,720 |
+| Markdown         |          9 |      1,623 |          0 |        460 |      2,083 |
+| JavaScript JSX   |         10 |      1,390 |         82 |        122 |      1,594 |
+| CSV              |          1 |      1,001 |          0 |          1 |      1,002 |
+| TSV              |          2 |        202 |          0 |          2 |        204 |
+| JavaScript       |          6 |        190 |         17 |         15 |        222 |
+| YAML             |          5 |        139 |          7 |         10 |        156 |
+| PostCSS          |          1 |        109 |          2 |         23 |        134 |
+| pip requirements |          2 |         71 |         28 |         28 |        127 |
+| Batch            |          4 |         57 |          2 |         12 |         71 |
+| Properties       |          1 |         45 |          6 |          8 |         59 |
+| Ignore           |          1 |         26 |          5 |          5 |         36 |
+| Docker           |          2 |         19 |          4 |         14 |         37 |
+| HTML             |          1 |         14 |          0 |          1 |         15 |
+| Shell Script     |          2 |          6 |          2 |          4 |         12 |
++------------------+------------+------------+------------+------------+------------+
+
+Directories
++-----------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                            | files      | code       | comment    | blank      | total      |
++-----------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                               |        102 |     18,570 |      1,842 |      2,086 |     22,498 |
+| . (Files)                                                       |          7 |        947 |         28 |        210 |      1,185 |
+| backend                                                         |         62 |      7,159 |      1,706 |      1,450 |     10,315 |
+| backend (Files)                                                 |         10 |        456 |         97 |        135 |        688 |
+| backend\api                                                     |         13 |        407 |        159 |        126 |        692 |
+| backend\api (Files)                                             |          1 |          0 |          0 |          1 |          1 |
+| backend\api\middleware                                          |          4 |         88 |         45 |         33 |        166 |
+| backend\api\models                                              |          3 |        100 |         23 |         31 |        154 |
+| backend\api\routers                                             |          5 |        219 |         91 |         61 |        371 |
+| backend\catboost_info                                           |          3 |        306 |          0 |          2 |        308 |
+| backend\config                                                  |          3 |        105 |         26 |         29 |        160 |
+| backend\data                                                    |          3 |      1,138 |          0 |         43 |      1,181 |
+| backend\data (Files)                                            |          1 |      1,001 |          0 |          1 |      1,002 |
+| backend\data\models                                             |          1 |        120 |          0 |         41 |        161 |
+| backend\data\scam_database                                      |          1 |         17 |          0 |          1 |         18 |
+| backend\modules                                                 |         16 |      3,944 |      1,012 |        881 |      5,837 |
+| backend\modules (Files)                                         |         11 |      3,336 |        812 |        734 |      4,882 |
+| backend\modules\ml                                              |          5 |        608 |        200 |        147 |        955 |
+| backend\services                                                |          9 |        642 |        301 |        174 |      1,117 |
+| backend\services (Files)                                        |          4 |        385 |        182 |        101 |        668 |
+| backend\services\blockchain                                     |          5 |        257 |        119 |         73 |        449 |
+| backend\utils                                                   |          5 |        161 |        111 |         60 |        332 |
+| docs                                                            |          3 |        443 |          0 |        144 |        587 |
+| frontend                                                        |         24 |      9,665 |        108 |        181 |      9,954 |
+| frontend (Files)                                                |         10 |      8,044 |          9 |         25 |      8,078 |
+| frontend\src                                                    |         14 |      1,621 |         99 |        156 |      1,876 |
+| frontend\src (Files)                                            |          2 |         35 |          0 |          5 |         40 |
+| frontend\src\components                                         |          2 |        139 |          9 |         16 |        164 |
+| frontend\src\components\Layout                                  |          2 |        139 |          9 |         16 |        164 |
+| frontend\src\data                                               |          1 |         87 |          1 |          3 |         91 |
+| frontend\src\pages                                              |          6 |      1,216 |         73 |        101 |      1,390 |
+| frontend\src\services                                           |          2 |         35 |         14 |          8 |         57 |
+| frontend\src\styles                                             |          1 |        109 |          2 |         23 |        134 |
+| k8s                                                             |          2 |         38 |          0 |          0 |         38 |
+| tests                                                           |          4 |        318 |          0 |        101 |        419 |
+| tests\performance_reports                                       |          3 |        286 |          0 |         90 |        376 |
+| tests\quality                                                   |          1 |         32 |          0 |         11 |         43 |
++-----------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++-----------------------------------------------------------------+------------------+------------+------------+------------+------------+
+| filename                                                        | language         | code       | comment    | blank      | total      |
++-----------------------------------------------------------------+------------------+------------+------------+------------+------------+
+| c:\proje2\.dockerignore                                         | Ignore           |         26 |          5 |          5 |         36 |
+| c:\proje2\README.md                                             | Markdown         |        742 |          0 |        174 |        916 |
+| c:\proje2\backend\Dockerfile                                    | Docker           |         12 |          4 |          8 |         24 |
+| c:\proje2\backend\__init__.py                                   | Python           |          0 |          0 |          1 |          1 |
+| c:\proje2\backend\api\__init__.py                               | Python           |          0 |          0 |          1 |          1 |
+| c:\proje2\backend\api\middleware\__init__.py                    | Python           |          0 |          0 |          1 |          1 |
+| c:\proje2\backend\api\middleware\cors.py                        | Python           |         12 |          9 |          3 |         24 |
+| c:\proje2\backend\api\middleware\error_handler.py               | Python           |         27 |          9 |          8 |         44 |
+| c:\proje2\backend\api\middleware\rate_limiter.py                | Python           |         49 |         27 |         21 |         97 |
+| c:\proje2\backend\api\models\__init__.py                        | Python           |          0 |          0 |          1 |          1 |
+| c:\proje2\backend\api\models\request.py                         | Python           |         28 |          7 |          9 |         44 |
+| c:\proje2\backend\api\models\response.py                        | Python           |         72 |         16 |         21 |        109 |
+| c:\proje2\backend\api\routers\__init__.py                       | Python           |          0 |          0 |          1 |          1 |
+| c:\proje2\backend\api\routers\analysis.py                       | Python           |         65 |         27 |         16 |        108 |
+| c:\proje2\backend\api\routers\health.py                         | Python           |         17 |         14 |          6 |         37 |
+| c:\proje2\backend\api\routers\history.py                        | Python           |         50 |         26 |         14 |         90 |
+| c:\proje2\backend\api\routers\monitoring.py                     | Python           |         87 |         24 |         24 |        135 |
+| c:\proje2\backend\catboost_info\catboost_training.json          | JSON             |        104 |          0 |          0 |        104 |
+| c:\proje2\backend\catboost_info\learn_error.tsv                 | TSV              |        101 |          0 |          1 |        102 |
+| c:\proje2\backend\catboost_info\time_left.tsv                   | TSV              |        101 |          0 |          1 |        102 |
+| c:\proje2\backend\check_models.py                               | Python           |         49 |          4 |          7 |         60 |
+| c:\proje2\backend\config\__init__.py                            | Python           |          0 |          0 |          1 |          1 |
+| c:\proje2\backend\config\chains.py                              | Python           |         50 |          5 |          7 |         62 |
+| c:\proje2\backend\config\settings.py                            | Python           |         55 |         21 |         21 |         97 |
+| c:\proje2\backend\data\models\MODEL_PERFORMANCE.md              | Markdown         |        120 |          0 |         41 |        161 |
+| c:\proje2\backend\data\scam_database\known_scams.json           | JSON             |         17 |          0 |          1 |         18 |
+| c:\proje2\backend\data\training_data.csv                        | CSV              |      1,001 |          0 |          1 |      1,002 |
+| c:\proje2\backend\main.py                                       | Python           |         60 |         16 |         20 |         96 |
+| c:\proje2\backend\modules\__init__.py                           | Python           |         22 |          3 |          1 |         26 |
+| c:\proje2\backend\modules\a_contract_security.py                | Python           |        266 |        104 |         77 |        447 |
+| c:\proje2\backend\modules\b_holder_analysis.py                  | Python           |        360 |         85 |         81 |        526 |
+| c:\proje2\backend\modules\c_liquidity_pool.py                   | Python           |        337 |         85 |         66 |        488 |
+| c:\proje2\backend\modules\d_transfer_anomaly.py                 | Python           |        459 |         70 |         77 |        606 |
+| c:\proje2\backend\modules\e_pattern_matching.py                 | Python           |        248 |        101 |         81 |        430 |
+| c:\proje2\backend\modules\f_tokenomics.py                       | Python           |        362 |         99 |         65 |        526 |
+| c:\proje2\backend\modules\h_ml_risk_scorer.py                   | Python           |        169 |         49 |         47 |        265 |
+| c:\proje2\backend\modules\i_honeypot_simulator.py               | Python           |        457 |         71 |         86 |        614 |
+| c:\proje2\backend\modules\k_whale_detector.py                   | Python           |        261 |         69 |         74 |        404 |
+| c:\proje2\backend\modules\ml\__init__.py                        | Python           |          0 |          4 |          1 |          5 |
+| c:\proje2\backend\modules\ml\deep_model.py                      | Python           |        152 |         69 |         46 |        267 |
+| c:\proje2\backend\modules\ml\ensemble_model.py                  | Python           |        249 |         56 |         50 |        355 |
+| c:\proje2\backend\modules\ml\feature_extractor.py               | Python           |         84 |         24 |         18 |        126 |
+| c:\proje2\backend\modules\ml\train_whale_model.py               | Python           |        123 |         47 |         32 |        202 |
+| c:\proje2\backend\modules\xai_explainer.py                      | Python           |        395 |         76 |         79 |        550 |
+| c:\proje2\backend\requirements.txt                              | pip requirements |         36 |         14 |         14 |         64 |
+| c:\proje2\backend\run.bat                                       | Batch            |          3 |          0 |          1 |          4 |
+| c:\proje2\backend\services\__init__.py                          | Python           |          0 |          0 |          1 |          1 |
+| c:\proje2\backend\services\analysis_orchestrator.py             | Python           |        253 |         62 |         51 |        366 |
+| c:\proje2\backend\services\blockchain\__init__.py               | Python           |          0 |          0 |          1 |          1 |
+| c:\proje2\backend\services\blockchain\base_chain.py             | Python           |         92 |         69 |         21 |        182 |
+| c:\proje2\backend\services\blockchain\bsc.py                    | Python           |         55 |         16 |         17 |         88 |
+| c:\proje2\backend\services\blockchain\ethereum.py               | Python           |         55 |         18 |         17 |         90 |
+| c:\proje2\backend\services\blockchain\polygon.py                | Python           |         55 |         16 |         17 |         88 |
+| c:\proje2\backend\services\cache_manager.py                     | Python           |         43 |         47 |         18 |        108 |
+| c:\proje2\backend\services\websocket_manager.py                 | Python           |         89 |         73 |         31 |        193 |
+| c:\proje2\backend\start_backend.bat                             | Batch            |          6 |          0 |          2 |          8 |
+| c:\proje2\backend\start_backend.sh                              | Shell Script     |          3 |          1 |          2 |          6 |
+| c:\proje2\backend\test_ml.py                                    | Python           |         86 |          7 |         15 |        108 |
+| c:\proje2\backend\train_models.py                               | Python           |        201 |         51 |         65 |        317 |
+| c:\proje2\backend\utils\__init__.py                             | Python           |          0 |          0 |          1 |          1 |
+| c:\proje2\backend\utils\constants.py                            | Python           |         56 |         16 |         15 |         87 |
+| c:\proje2\backend\utils\formatters.py                           | Python           |         48 |         28 |         19 |         95 |
+| c:\proje2\backend\utils\logger.py                               | Python           |         33 |         16 |         11 |         60 |
+| c:\proje2\backend\utils\validators.py                           | Python           |         24 |         51 |         14 |         89 |
+| c:\proje2\docker-compose.prod.yml                               | YAML             |         28 |          0 |          4 |         32 |
+| c:\proje2\docker-compose.yml                                    | YAML             |         27 |          0 |          4 |         31 |
+| c:\proje2\docker-start.bat                                      | Batch            |         43 |          2 |          7 |         52 |
+| c:\proje2\docs\ARCHITECTURE.md                                  | Markdown         |        159 |          0 |         35 |        194 |
+| c:\proje2\docs\DOCKER.md                                        | Markdown         |        197 |          0 |         66 |        263 |
+| c:\proje2\docs\GETTING_STARTED.md                               | Markdown         |         87 |          0 |         43 |        130 |
+| c:\proje2\frontend\Dockerfile                                   | Docker           |          7 |          0 |          6 |         13 |
+| c:\proje2\frontend\index.html                                   | HTML             |         14 |          0 |          1 |         15 |
+| c:\proje2\frontend\nginx.conf                                   | Properties       |         45 |          6 |          8 |         59 |
+| c:\proje2\frontend\package-lock.json                            | JSON             |      7,867 |          0 |          1 |      7,868 |
+| c:\proje2\frontend\package.json                                 | JSON             |         35 |          0 |          1 |         36 |
+| c:\proje2\frontend\postcss.config.js                            | JavaScript       |          6 |          0 |          1 |          7 |
+| c:\proje2\frontend\src\App.jsx                                  | JavaScript JSX   |         28 |          0 |          3 |         31 |
+| c:\proje2\frontend\src\components\Layout\Footer.jsx             | JavaScript JSX   |         66 |          4 |          7 |         77 |
+| c:\proje2\frontend\src\components\Layout\Header.jsx             | JavaScript JSX   |         73 |          5 |          9 |         87 |
+| c:\proje2\frontend\src\data\ethereumTokens.js                   | JavaScript       |         87 |          1 |          3 |         91 |
+| c:\proje2\frontend\src\main.jsx                                 | JavaScript JSX   |          7 |          0 |          2 |          9 |
+| c:\proje2\frontend\src\pages\About.jsx                          | JavaScript JSX   |         76 |          1 |          4 |         81 |
+| c:\proje2\frontend\src\pages\AnalysisResult.jsx                 | JavaScript JSX   |        967 |         60 |         74 |      1,101 |
+| c:\proje2\frontend\src\pages\History.jsx                        | JavaScript JSX   |         12 |          0 |          1 |         13 |
+| c:\proje2\frontend\src\pages\Home.jsx                           | JavaScript JSX   |        135 |         12 |         19 |        166 |
+| c:\proje2\frontend\src\pages\Monitor.jsx                        | JavaScript JSX   |         12 |          0 |          1 |         13 |
+| c:\proje2\frontend\src\pages\NotFound.jsx                       | JavaScript JSX   |         14 |          0 |          2 |         16 |
+| c:\proje2\frontend\src\services\analysisService.js              | JavaScript       |         13 |         13 |          3 |         29 |
+| c:\proje2\frontend\src\services\api.js                          | JavaScript       |         22 |          1 |          5 |         28 |
+| c:\proje2\frontend\src\styles\index.css                         | PostCSS          |        109 |          2 |         23 |        134 |
+| c:\proje2\frontend\start_frontend.bat                           | Batch            |          5 |          0 |          2 |          7 |
+| c:\proje2\frontend\start_frontend.sh                            | Shell Script     |          3 |          1 |          2 |          6 |
+| c:\proje2\frontend\tailwind.config.js                           | JavaScript       |         45 |          1 |          1 |         47 |
+| c:\proje2\frontend\vite.config.js                               | JavaScript       |         17 |          1 |          2 |         20 |
+| c:\proje2\k8s\deployment.yaml                                   | YAML             |         26 |          0 |          0 |         26 |
+| c:\proje2\k8s\service.yaml                                      | YAML             |         12 |          0 |          0 |         12 |
+| c:\proje2\render.yaml                                           | YAML             |         46 |          7 |          2 |         55 |
+| c:\proje2\requirements.txt                                      | pip requirements |         35 |         14 |         14 |         63 |
+| c:\proje2\tests\performance_reports\SUMMARY.md                  | Markdown         |         73 |          0 |         31 |        104 |
+| c:\proje2\tests\performance_reports\deep_analysis_benchmark.md  | Markdown         |         99 |          0 |         27 |        126 |
+| c:\proje2\tests\performance_reports\infrastructure_benchmark.md | Markdown         |        114 |          0 |         32 |        146 |
+| c:\proje2\tests\quality\REPORT.md                               | Markdown         |         32 |          0 |         11 |         43 |
+| Total                                                           |                  |     18,570 |      1,842 |      2,086 |     22,498 |
++-----------------------------------------------------------------+------------------+------------+------------+------------+------------+
